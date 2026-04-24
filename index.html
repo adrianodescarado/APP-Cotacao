@@ -936,5 +936,31 @@ function renderAll(){
   renderDashboard(); renderClientes(); renderProdutos(); renderOrcamentos();
 }
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+const supabase = window.supabase.createClient(
+  "https://wctvbkusaajjfosaiibl.supabase.co",
+  "sb_publishable_qqa8Ely5r6qvLlc-3KiqNw_bPUuBYOs"
+);
+
+async function salvarSupabase() {
+  const { error } = await supabase
+    .from('cotacoes')
+    .insert([
+      { produto: 'Teste HTML', valor: 123 }
+    ]);
+
+  if (error) {
+    alert("Erro: " + error.message);
+  } else {
+    alert("Salvou!");
+  }
+}
+</script>
+
+<button onclick="salvarSupabase()">Salvar no banco</button>
+
 </body>
 </html>
