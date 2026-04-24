@@ -951,16 +951,21 @@ const supabase = window.supabase.createClient(
 );
 
 async function salvarSupabase() {
-  const { error } = await supabase
-    .from('cotacoes')
-    .insert([
-      { produto: 'Teste HTML', valor: 123 }
-    ]);
+  try {
+    const { data, error } = await supabase
+      .from('cotacoes')
+      .insert([
+        { produto: 'TESTE FINAL', valor: 999 }
+      ]);
 
-  if (error) {
-    alert("Erro: " + error.message);
-  } else {
-    alert("Salvou!");
+    console.log('DATA:', data);
+    console.log('ERROR:', error);
+
+    alert('Cliquei no botão');
+
+  } catch (e) {
+    alert('Erro geral: ' + e.message);
+    console.log(e);
   }
 }
 </script>
