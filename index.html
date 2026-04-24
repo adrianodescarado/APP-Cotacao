@@ -4,311 +4,232 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OrçaPro — Sistema de Cotações</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root {
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --primary-light: #eff6ff;
-  --success: #16a34a;
-  --success-light: #f0fdf4;
-  --warning: #d97706;
-  --warning-light: #fffbeb;
-  --danger: #dc2626;
-  --danger-light: #fef2f2;
-  --gray-50: #f9fafb;
-  --gray-100: #f3f4f6;
-  --gray-200: #e5e7eb;
-  --gray-300: #d1d5db;
-  --gray-400: #9ca3af;
-  --gray-500: #6b7280;
-  --gray-600: #4b5563;
-  --gray-700: #374151;
-  --gray-800: #1f2937;
-  --gray-900: #111827;
-  --sidebar-w: 220px;
-  --header-h: 56px;
-  --radius: 8px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
-  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--gray-50); color: var(--gray-800); font-size: 14px; line-height: 1.5; }
+:root{--primary:#2563eb;--primary-dark:#1d4ed8;--primary-light:#eff6ff;--success:#16a34a;--success-light:#f0fdf4;--warning:#d97706;--warning-light:#fffbeb;--danger:#dc2626;--danger-light:#fef2f2;--gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-300:#d1d5db;--gray-400:#9ca3af;--gray-500:#6b7280;--gray-600:#4b5563;--gray-700:#374151;--gray-800:#1f2937;--gray-900:#111827;--sidebar-w:220px;--header-h:56px;--radius:8px;--shadow:0 1px 3px rgba(0,0,0,0.1),0 1px 2px rgba(0,0,0,0.06);--shadow-md:0 4px 6px rgba(0,0,0,0.07),0 2px 4px rgba(0,0,0,0.06);--shadow-lg:0 10px 15px rgba(0,0,0,0.1),0 4px 6px rgba(0,0,0,0.05);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--gray-50);color:var(--gray-800);font-size:14px;line-height:1.5;}
 
-/* ── LAYOUT ── */
-.layout { display: flex; height: 100vh; overflow: hidden; }
-.sidebar { width: var(--sidebar-w); background: var(--gray-900); display: flex; flex-direction: column; flex-shrink: 0; }
-.content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.topbar { height: var(--header-h); background: #fff; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; padding: 0 24px; gap: 12px; flex-shrink: 0; box-shadow: var(--shadow); }
-.page-area { flex: 1; overflow-y: auto; }
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--gray-900);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.login-card{background:#fff;border-radius:16px;padding:40px;width:360px;max-width:92vw;box-shadow:var(--shadow-lg);text-align:center;}
+.login-logo{font-size:2rem;margin-bottom:8px;}
+.login-title{font-size:1.3rem;font-weight:800;color:var(--gray-900);margin-bottom:4px;}
+.login-sub{font-size:.8rem;color:var(--gray-400);margin-bottom:28px;}
+.login-input{width:100%;border:1px solid var(--gray-300);border-radius:8px;padding:12px 14px;font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;text-align:center;letter-spacing:.3em;outline:none;transition:border-color .15s;}
+.login-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
+.login-btn{width:100%;margin-top:14px;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:background .12s;}
+.login-btn:hover{background:var(--primary-dark);}
+.login-err{color:var(--danger);font-size:.78rem;margin-top:8px;display:none;}
 
-/* ── SIDEBAR ── */
-.sidebar-logo { padding: 18px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
-.sidebar-logo .brand { font-size: 1.1rem; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
-.sidebar-logo .sub { font-size: 0.68rem; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 1px; }
-nav { flex: 1; padding: 8px; }
-.nav-section { font-size: 0.65rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.12em; padding: 12px 8px 4px; font-weight: 600; }
-.nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 6px; color: rgba(255,255,255,0.55); font-size: 0.82rem; font-weight: 500; cursor: pointer; transition: all 0.12s; margin-bottom: 1px; }
-.nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.85); }
-.nav-item.active { background: var(--primary); color: #fff; }
-.nav-item .icon { width: 16px; height: 16px; flex-shrink: 0; }
-.nav-badge { margin-left: auto; background: var(--primary); color: #fff; font-size: 0.65rem; font-weight: 700; padding: 1px 6px; border-radius: 20px; }
-.nav-item.active .nav-badge { background: rgba(255,255,255,0.25); }
-.sidebar-footer { padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); }
-.user-info { display: flex; align-items: center; gap: 9px; }
-.user-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
-.user-name { font-size: 0.78rem; font-weight: 600; color: rgba(255,255,255,0.8); }
-.user-role { font-size: 0.68rem; color: rgba(255,255,255,0.35); }
+/* LAYOUT */
+.layout{display:flex;height:100vh;overflow:hidden;}
+.sidebar{width:var(--sidebar-w);background:var(--gray-900);display:flex;flex-direction:column;flex-shrink:0;}
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{height:var(--header-h);background:#fff;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;padding:0 24px;gap:12px;flex-shrink:0;box-shadow:var(--shadow);}
+.page-area{flex:1;overflow-y:auto;}
 
-/* ── TOPBAR ── */
-.page-title { font-size: 0.95rem; font-weight: 700; color: var(--gray-800); flex: 1; }
-.topbar-actions { display: flex; align-items: center; gap: 8px; }
+/* SIDEBAR */
+.sidebar-logo{padding:18px 16px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.sidebar-logo .brand{font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:-0.02em;}
+.sidebar-logo .sub{font-size:.68rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.1em;margin-top:1px;}
+nav{flex:1;padding:8px;}
+.nav-section{font-size:.65rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.12em;padding:12px 8px 4px;font-weight:600;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:6px;color:rgba(255,255,255,0.55);font-size:.82rem;font-weight:500;cursor:pointer;transition:all .12s;margin-bottom:1px;}
+.nav-item:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.85);}
+.nav-item.active{background:var(--primary);color:#fff;}
+.nav-item .icon{width:16px;height:16px;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--primary);color:#fff;font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:20px;}
+.nav-item.active .nav-badge{background:rgba(255,255,255,0.25);}
+.sidebar-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.08);}
+.user-info{display:flex;align-items:center;gap:9px;}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:700;flex-shrink:0;}
+.user-name{font-size:.78rem;font-weight:600;color:rgba(255,255,255,0.8);}
+.user-role{font-size:.68rem;color:rgba(255,255,255,0.35);}
 
-/* ── PAGES ── */
-.page { display: none; padding: 24px; }
-.page.active { display: block; }
+/* TOPBAR */
+.page-title{font-size:.95rem;font-weight:700;color:var(--gray-800);flex:1;}
+.topbar-actions{display:flex;align-items:center;gap:8px;}
 
-/* ── CARDS / PANELS ── */
-.panel { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius); box-shadow: var(--shadow); }
-.panel-header { padding: 14px 20px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; }
-.panel-header h3 { font-size: 0.85rem; font-weight: 700; color: var(--gray-700); display: flex; align-items: center; gap: 7px; }
-.panel-body { padding: 20px; }
+/* PAGES */
+.page{display:none;padding:24px;}
+.page.active{display:block;}
 
-/* ── STATS ── */
-.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-.stat-card { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow); }
-.stat-label { font-size: 0.72rem; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.06em; }
-.stat-value { font-size: 1.6rem; font-weight: 700; color: var(--gray-900); margin-top: 4px; line-height: 1; }
-.stat-sub { font-size: 0.72rem; color: var(--gray-400); margin-top: 4px; }
-.stat-card.blue .stat-value { color: var(--primary); }
-.stat-card.green .stat-value { color: var(--success); }
+/* PANELS */
+.panel{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);box-shadow:var(--shadow);}
+.panel-header{padding:14px 20px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;}
+.panel-header h3{font-size:.85rem;font-weight:700;color:var(--gray-700);display:flex;align-items:center;gap:7px;}
+.panel-body{padding:20px;}
 
-/* ── BUTTONS ── */
-.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 6px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.12s; text-decoration: none; white-space: nowrap; }
-.btn-primary { background: var(--primary); color: #fff; }
-.btn-primary:hover { background: var(--primary-dark); }
-.btn-success { background: var(--success); color: #fff; }
-.btn-success:hover { background: #15803d; }
-.btn-outline { background: #fff; color: var(--gray-700); border: 1px solid var(--gray-300); }
-.btn-outline:hover { background: var(--gray-50); border-color: var(--gray-400); }
-.btn-ghost { background: transparent; color: var(--gray-500); border: 1px solid transparent; }
-.btn-ghost:hover { background: var(--gray-100); color: var(--gray-700); }
-.btn-danger { background: var(--danger-light); color: var(--danger); border: 1px solid rgba(220,38,38,0.2); }
-.btn-danger:hover { background: #fee2e2; }
-.btn-whatsapp { background: #25d366; color: #fff; }
-.btn-whatsapp:hover { background: #1dbb5a; }
-.btn-sm { padding: 5px 10px; font-size: 0.75rem; }
-.btn-lg { padding: 10px 20px; font-size: 0.88rem; }
-.btn-icon { padding: 6px; border-radius: 6px; }
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.stat-card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);padding:16px 20px;box-shadow:var(--shadow);}
+.stat-label{font-size:.72rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.06em;}
+.stat-value{font-size:1.6rem;font-weight:700;color:var(--gray-900);margin-top:4px;line-height:1;}
+.stat-sub{font-size:.72rem;color:var(--gray-400);margin-top:4px;}
+.stat-card.blue .stat-value{color:var(--primary);}
+.stat-card.green .stat-value{color:var(--success);}
 
-/* ── TABLE ── */
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-thead tr { background: var(--gray-50); }
-th { padding: 10px 14px; text-align: left; font-size: 0.7rem; font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--gray-200); white-space: nowrap; }
-td { padding: 11px 14px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
-tr:last-child td { border-bottom: none; }
-tbody tr:hover { background: var(--gray-50); }
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;border:none;transition:all .12s;text-decoration:none;white-space:nowrap;}
+.btn-primary{background:var(--primary);color:#fff;}.btn-primary:hover{background:var(--primary-dark);}
+.btn-success{background:var(--success);color:#fff;}.btn-success:hover{background:#15803d;}
+.btn-outline{background:#fff;color:var(--gray-700);border:1px solid var(--gray-300);}.btn-outline:hover{background:var(--gray-50);border-color:var(--gray-400);}
+.btn-ghost{background:transparent;color:var(--gray-500);border:1px solid transparent;}.btn-ghost:hover{background:var(--gray-100);color:var(--gray-700);}
+.btn-danger{background:var(--danger-light);color:var(--danger);border:1px solid rgba(220,38,38,0.2);}.btn-danger:hover{background:#fee2e2;}
+.btn-whatsapp{background:#25d366;color:#fff;}.btn-whatsapp:hover{background:#1dbb5a;}
+.btn-sm{padding:5px 10px;font-size:.75rem;}
+.btn-lg{padding:10px 20px;font-size:.88rem;}
+.btn-icon{padding:6px;border-radius:6px;}
 
-/* ── BADGES ── */
-.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
-.badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-.badge-blue { background: var(--primary-light); color: var(--primary); }
-.badge-green { background: var(--success-light); color: var(--success); }
-.badge-yellow { background: var(--warning-light); color: var(--warning); }
-.badge-gray { background: var(--gray-100); color: var(--gray-500); }
+/* TABLE */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:.82rem;}
+thead tr{background:var(--gray-50);}
+th{padding:10px 14px;text-align:left;font-size:.7rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--gray-200);white-space:nowrap;}
+td{padding:11px 14px;border-bottom:1px solid var(--gray-100);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--gray-50);}
 
-/* ── FORMS ── */
-.form-group { margin-bottom: 14px; }
-.form-label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--gray-600); margin-bottom: 5px; }
-.form-label .req { color: var(--danger); }
-.form-control { width: 100%; background: #fff; border: 1px solid var(--gray-300); border-radius: 6px; color: var(--gray-800); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.82rem; padding: 8px 11px; outline: none; transition: border-color 0.12s, box-shadow 0.12s; }
-.form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-textarea.form-control { resize: vertical; min-height: 72px; }
-.form-row { display: grid; gap: 12px; }
-.form-row.cols-2 { grid-template-columns: 1fr 1fr; }
-.form-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:.7rem;font-weight:600;}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;}
+.badge-blue{background:var(--primary-light);color:var(--primary);}
+.badge-green{background:var(--success-light);color:var(--success);}
+.badge-yellow{background:var(--warning-light);color:var(--warning);}
+.badge-gray{background:var(--gray-100);color:var(--gray-500);}
 
-/* ── MODALS ── */
-.overlay { display: none; position: fixed; inset: 0; background: rgba(17,24,39,0.5); z-index: 200; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-.overlay.open { display: flex; }
-.modal { background: #fff; border-radius: 12px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; max-height: 92vh; overflow: hidden; }
-.modal-sm { width: 440px; max-width: 96vw; }
-.modal-md { width: 580px; max-width: 96vw; }
-.modal-lg { width: 780px; max-width: 96vw; }
-.modal-xl { width: 960px; max-width: 96vw; }
-.modal-head { padding: 18px 22px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-.modal-head h3 { font-size: 0.95rem; font-weight: 700; }
-.modal-body { padding: 22px; overflow-y: auto; flex: 1; }
-.modal-foot { padding: 14px 22px; border-top: 1px solid var(--gray-200); display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0; }
-.close-btn { background: none; border: none; cursor: pointer; color: var(--gray-400); padding: 4px; border-radius: 4px; line-height: 1; font-size: 1.1rem; }
-.close-btn:hover { background: var(--gray-100); color: var(--gray-600); }
+/* FORMS */
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-size:.75rem;font-weight:600;color:var(--gray-600);margin-bottom:5px;}
+.form-label .req{color:var(--danger);}
+.form-control{width:100%;background:#fff;border:1px solid var(--gray-300);border-radius:6px;color:var(--gray-800);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;padding:8px 11px;outline:none;transition:border-color .12s,box-shadow .12s;}
+.form-control:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
+textarea.form-control{resize:vertical;min-height:72px;}
+.form-row{display:grid;gap:12px;}
+.form-row.cols-2{grid-template-columns:1fr 1fr;}
+.form-row.cols-3{grid-template-columns:1fr 1fr 1fr;}
 
-/* ── PRODUCT CARD ── */
-.product-thumb { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; background: var(--gray-100); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; overflow: hidden; border: 1px solid var(--gray-200); }
-.product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+/* MODALS */
+.overlay{display:none;position:fixed;inset:0;background:rgba(17,24,39,0.5);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.overlay.open{display:flex;}
+.modal{background:#fff;border-radius:12px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;max-height:92vh;overflow:hidden;}
+.modal-sm{width:440px;max-width:96vw;}
+.modal-md{width:580px;max-width:96vw;}
+.modal-lg{width:780px;max-width:96vw;}
+.modal-xl{width:960px;max-width:96vw;}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.modal-head h3{font-size:.95rem;font-weight:700;}
+.modal-body{padding:22px;overflow-y:auto;flex:1;}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--gray-200);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;}
+.close-btn{background:none;border:none;cursor:pointer;color:var(--gray-400);padding:4px;border-radius:4px;line-height:1;font-size:1.1rem;}
+.close-btn:hover{background:var(--gray-100);color:var(--gray-600);}
 
-/* ── GRID DE PRODUTOS NO ORÇAMENTO ── */
-.prod-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; max-height: 240px; overflow-y: auto; padding: 2px; }
-.prod-pick-card { border: 1px solid var(--gray-200); border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.12s; background: #fff; display: flex; flex-direction: column; gap: 6px; }
-.prod-pick-card:hover { border-color: var(--primary); background: var(--primary-light); }
-.prod-pick-card .thumb { width: 36px; height: 36px; border-radius: 6px; background: var(--gray-100); display: flex; align-items: center; justify-content: center; font-size: 1rem; overflow: hidden; }
-.prod-pick-card .thumb img { width: 100%; height: 100%; object-fit: cover; }
-.prod-pick-card .pname { font-size: 0.75rem; font-weight: 600; color: var(--gray-700); line-height: 1.3; }
-.prod-pick-card .pprice { font-size: 0.72rem; font-weight: 700; color: var(--primary); }
+/* PRODUCT */
+.product-thumb{width:44px;height:44px;border-radius:6px;object-fit:cover;background:var(--gray-100);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;overflow:hidden;border:1px solid var(--gray-200);}
+.product-thumb img{width:100%;height:100%;object-fit:cover;}
 
-/* ── ITENS DO ORÇAMENTO ── */
-.orc-items { margin-top: 12px; }
-.orc-item-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: 8px; margin-bottom: 6px; background: #fff; }
-.orc-item-row .item-info { flex: 1; min-width: 0; }
-.orc-item-row .item-name { font-weight: 600; font-size: 0.82rem; color: var(--gray-800); }
-.orc-item-row .item-code { font-size: 0.7rem; color: var(--gray-400); }
-.qty-wrap { display: flex; align-items: center; gap: 5px; }
-.qty-btn { width: 26px; height: 26px; border-radius: 5px; border: 1px solid var(--gray-300); background: var(--gray-50); color: var(--gray-600); cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 700; transition: all 0.1s; }
-.qty-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
-.qty-input { width: 46px; text-align: center; border: 1px solid var(--gray-300); border-radius: 5px; padding: 4px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--gray-800); outline: none; }
-.qty-input:focus { border-color: var(--primary); }
-.item-subtotal { min-width: 80px; text-align: right; font-weight: 700; font-size: 0.85rem; color: var(--gray-800); }
-.orc-totals { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px 16px; margin-top: 10px; }
-.total-line { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--gray-500); padding: 2px 0; }
-.total-line.grand { padding-top: 8px; margin-top: 6px; border-top: 1px solid var(--gray-300); }
-.total-line.grand span:first-child { font-weight: 700; font-size: 0.9rem; color: var(--gray-800); }
-.total-line.grand span:last-child { font-weight: 700; font-size: 1.1rem; color: var(--primary); }
+/* PROD PICKER */
+.prod-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;max-height:240px;overflow-y:auto;padding:2px;}
+.prod-pick-card{border:1px solid var(--gray-200);border-radius:8px;padding:10px;cursor:pointer;transition:all .12s;background:#fff;display:flex;flex-direction:column;gap:6px;}
+.prod-pick-card:hover{border-color:var(--primary);background:var(--primary-light);}
+.prod-pick-card .thumb{width:36px;height:36px;border-radius:6px;background:var(--gray-100);display:flex;align-items:center;justify-content:center;font-size:1rem;overflow:hidden;}
+.prod-pick-card .thumb img{width:100%;height:100%;object-fit:cover;}
+.prod-pick-card .pname{font-size:.75rem;font-weight:600;color:var(--gray-700);line-height:1.3;}
+.prod-pick-card .pprice{font-size:.72rem;font-weight:700;color:var(--primary);}
 
-/* ── DISCOUNT INPUT ── */
-.disc-input { width: 64px; text-align: center; border: 1px solid var(--gray-300); border-radius: 5px; padding: 4px 6px; font-size: 0.78rem; font-family: 'Plus Jakarta Sans', sans-serif; outline: none; }
-.disc-input:focus { border-color: var(--primary); }
+/* ORC ITENS */
+.orc-item-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--gray-200);border-radius:8px;margin-bottom:6px;background:#fff;}
+.orc-item-row .item-info{flex:1;min-width:0;}
+.orc-item-row .item-name{font-weight:600;font-size:.82rem;color:var(--gray-800);}
+.orc-item-row .item-code{font-size:.7rem;color:var(--gray-400);}
+.qty-wrap{display:flex;align-items:center;gap:5px;}
+.qty-btn{width:26px;height:26px;border-radius:5px;border:1px solid var(--gray-300);background:var(--gray-50);color:var(--gray-600);cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;transition:all .1s;}
+.qty-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light);}
+.qty-input{width:46px;text-align:center;border:1px solid var(--gray-300);border-radius:5px;padding:4px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;font-weight:600;color:var(--gray-800);outline:none;}
+.qty-input:focus{border-color:var(--primary);}
+.item-subtotal{min-width:80px;text-align:right;font-weight:700;font-size:.85rem;color:var(--gray-800);}
+.orc-totals{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:14px 16px;margin-top:10px;}
+.total-line{display:flex;justify-content:space-between;font-size:.82rem;color:var(--gray-500);padding:2px 0;}
+.total-line.grand{padding-top:8px;margin-top:6px;border-top:1px solid var(--gray-300);}
+.total-line.grand span:first-child{font-weight:700;font-size:.9rem;color:var(--gray-800);}
+.total-line.grand span:last-child{font-weight:700;font-size:1.1rem;color:var(--primary);}
+.disc-input{width:64px;text-align:center;border:1px solid var(--gray-300);border-radius:5px;padding:4px 6px;font-size:.78rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;}
+.disc-input:focus{border-color:var(--primary);}
 
-/* ── SHARE MODAL ── */
-.share-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-.share-btn-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; border: 1px solid var(--gray-200); border-radius: 10px; cursor: pointer; transition: all 0.12s; background: #fff; }
-.share-btn-card:hover { border-color: var(--primary); background: var(--primary-light); }
-.share-btn-card .share-icon { font-size: 1.6rem; }
-.share-btn-card .share-label { font-size: 0.78rem; font-weight: 600; color: var(--gray-700); }
-.share-btn-card.wpp:hover { border-color: #25d366; background: #f0fdf4; }
-.share-btn-card.email-card:hover { border-color: var(--primary); }
+/* UPLOAD */
+.logo-upload{width:72px;height:72px;border-radius:10px;border:2px dashed var(--gray-300);background:var(--gray-50);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.5rem;position:relative;overflow:hidden;flex-shrink:0;transition:border-color .12s;}
+.logo-upload:hover{border-color:var(--primary);}
+.logo-upload input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.logo-upload img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:4px;}
+.foto-upload{width:80px;height:80px;border-radius:10px;border:2px dashed var(--gray-300);background:var(--gray-50);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.5rem;position:relative;overflow:hidden;flex-shrink:0;transition:border-color .12s;}
+.foto-upload:hover{border-color:var(--primary);}
+.foto-upload input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.foto-upload img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:8px;}
 
-/* ── EMPRESA CONFIG ── */
-.empresa-img-wrap { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
-.logo-upload { width: 72px; height: 72px; border-radius: 10px; border: 2px dashed var(--gray-300); background: var(--gray-50); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.5rem; position: relative; overflow: hidden; flex-shrink: 0; transition: border-color 0.12s; }
-.logo-upload:hover { border-color: var(--primary); }
-.logo-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.logo-upload img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+/* MISC */
+.empty-state{text-align:center;padding:48px 20px;color:var(--gray-400);}
+.empty-state .eicon{font-size:2.4rem;margin-bottom:10px;}
+.empty-state p{font-size:.85rem;}
+.search-wrap{position:relative;}
+.search-wrap input{padding-left:32px;}
+.search-wrap .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray-400);pointer-events:none;}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.68rem;font-weight:600;background:var(--gray-100);color:var(--gray-600);}
+.empresa-img-wrap{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
 
-/* ── FOTO PRODUTO ── */
-.foto-upload { width: 80px; height: 80px; border-radius: 10px; border: 2px dashed var(--gray-300); background: var(--gray-50); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.5rem; position: relative; overflow: hidden; flex-shrink: 0; transition: border-color 0.12s; }
-.foto-upload:hover { border-color: var(--primary); }
-.foto-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.foto-upload img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+/* SYNC STATUS */
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--gray-300);display:inline-block;margin-right:6px;transition:background .3s;}
+.sync-dot.ok{background:var(--success);}
+.sync-dot.syncing{background:var(--warning);animation:pulse .8s infinite;}
+.sync-dot.err{background:var(--danger);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-/* ── EMPTY ── */
-.empty-state { text-align: center; padding: 48px 20px; color: var(--gray-400); }
-.empty-state .eicon { font-size: 2.4rem; margin-bottom: 10px; }
-.empty-state p { font-size: 0.85rem; }
-
-/* ── SEARCH ── */
-.search-wrap { position: relative; }
-.search-wrap input { padding-left: 32px; }
-.search-wrap .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--gray-400); pointer-events: none; }
-
-/* ── ORÇAMENTO PREVIEW (para impressão) ── */
-#print-doc { display: none; }
-@media print {
-  body * { visibility: hidden !important; }
-  #print-doc, #print-doc * { visibility: visible !important; display: block !important; }
-  #print-doc { position: fixed; inset: 0; background: #fff; padding: 32px 40px; font-family: 'Plus Jakarta Sans', sans-serif; color: #111; font-size: 13px; }
+/* MOBILE */
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .page{padding:16px 14px 90px;}
+  .topbar{padding:0 14px;}
+  .modal-lg,.modal-xl{width:100vw;max-width:100vw;border-radius:16px 16px 0 0;margin-top:auto;max-height:92vh;}
+  .overlay{align-items:flex-end;}
+  .modal-body{padding:16px;}
+  .form-row.cols-3{grid-template-columns:1fr 1fr;}
+  .orc-item-row{flex-wrap:wrap;gap:8px;}
+  .prod-picker{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));}
+  .modal-body-orc-grid{grid-template-columns:1fr!important;}
 }
 
-/* ── TAGS ── */
-.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.68rem; font-weight: 600; background: var(--gray-100); color: var(--gray-600); }
-
-/* ── TOOLTIP ── */
-.tooltip { position: relative; cursor: help; }
-.tooltip:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--gray-800); color: #fff; padding: 4px 8px; border-radius: 5px; font-size: 0.7rem; white-space: nowrap; pointer-events: none; }
-
-/* ── MOBILE ── */
-@media (max-width: 768px) {
-  .sidebar { display: none; }
-  .stats-row { grid-template-columns: repeat(2,1fr); }
-  .page { padding: 16px 14px 90px; }
-  .topbar { padding: 0 14px; }
-  .modal-lg, .modal-xl { width: 100vw; max-width: 100vw; border-radius: 16px 16px 0 0; margin-top: auto; max-height: 92vh; }
-  .overlay { align-items: flex-end; }
-  .modal-body { padding: 16px; }
-  .modal-body > div[style*="grid-template-columns:1fr 360px"] { grid-template-columns: 1fr !important; }
-  .form-row.cols-3 { grid-template-columns: 1fr 1fr; }
-  .orc-item-row { flex-wrap: wrap; gap: 8px; }
-  .prod-picker { grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); }
-}
-
-/* ── BOTTOM NAV (mobile) ── */
-.bottom-nav {
-  display: none;
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  background: var(--gray-900);
-  border-top: 1px solid rgba(255,255,255,0.08);
-  z-index: 100;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-.bottom-nav-inner {
-  display: flex;
-  align-items: stretch;
-  height: 60px;
-}
-.bn-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  cursor: pointer;
-  color: rgba(255,255,255,0.4);
-  font-size: 0.6rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  transition: color 0.12s;
-  padding: 6px 4px;
-  border: none;
-  background: none;
-  -webkit-tap-highlight-color: transparent;
-}
-.bn-item.active { color: var(--primary); }
-.bn-item svg { width: 20px; height: 20px; }
-.bn-fab {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  background: none;
-  border: none;
-  -webkit-tap-highlight-color: transparent;
-  padding: 6px 4px;
-}
-.bn-fab-inner {
-  width: 44px; height: 44px;
-  background: var(--primary);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 12px rgba(37,99,235,0.5);
-  transition: transform 0.12s;
-}
-.bn-fab:active .bn-fab-inner { transform: scale(0.92); }
-
-@media (max-width: 768px) {
-  .bottom-nav { display: block; }
-}
+/* BOTTOM NAV */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--gray-900);border-top:1px solid rgba(255,255,255,0.08);z-index:100;padding-bottom:env(safe-area-inset-bottom,0px);}
+.bottom-nav-inner{display:flex;align-items:stretch;height:60px;}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:rgba(255,255,255,0.4);font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;transition:color .12s;padding:6px 4px;border:none;background:none;-webkit-tap-highlight-color:transparent;}
+.bn-item.active{color:var(--primary);}
+.bn-item svg{width:20px;height:20px;}
+.bn-fab{flex:1;display:flex;align-items:center;justify-content:center;cursor:pointer;background:none;border:none;-webkit-tap-highlight-color:transparent;padding:6px 4px;}
+.bn-fab-inner{width:44px;height:44px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(37,99,235,0.5);transition:transform .12s;}
+.bn-fab:active .bn-fab-inner{transform:scale(0.92);}
+@media(max-width:768px){.bottom-nav{display:block;}}
 </style>
 </head>
 <body>
 
-<div class="layout">
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🔐</div>
+    <div class="login-title">OrçaPro</div>
+    <div class="login-sub">Sistema Comercial · Acesso Restrito</div>
+    <input class="login-input" type="password" id="login-senha" placeholder="••••" maxlength="10"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="login-err">Senha incorreta. Tente novamente.</div>
+  </div>
+</div>
 
-<!-- ══════════ SIDEBAR ══════════ -->
+<div class="layout">
+<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">
     <div class="brand" id="sb-brand">OrçaPro</div>
@@ -317,23 +238,19 @@ textarea.form-control { resize: vertical; min-height: 72px; }
   <nav>
     <div class="nav-section">Menu</div>
     <div class="nav-item active" data-page="dashboard" onclick="goTo('dashboard',this)">
-      <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      Dashboard
+      <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard
     </div>
     <div class="nav-item" data-page="orcamentos" onclick="goTo('orcamentos',this)">
       <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      Pedidos / Cotações
-      <span class="nav-badge" id="nb-orc">0</span>
+      Pedidos / Cotações<span class="nav-badge" id="nb-orc">0</span>
     </div>
     <div class="nav-item" data-page="clientes" onclick="goTo('clientes',this)">
       <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Clientes
-      <span class="nav-badge" id="nb-cli">0</span>
+      Clientes<span class="nav-badge" id="nb-cli">0</span>
     </div>
     <div class="nav-item" data-page="produtos" onclick="goTo('produtos',this)">
       <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-      Produtos
-      <span class="nav-badge" id="nb-prod">0</span>
+      Produtos<span class="nav-badge" id="nb-prod">0</span>
     </div>
     <div class="nav-section">Config</div>
     <div class="nav-item" data-page="empresa" onclick="goTo('empresa',this)">
@@ -346,306 +263,168 @@ textarea.form-control { resize: vertical; min-height: 72px; }
       <div class="user-avatar" id="sb-avatar">V</div>
       <div>
         <div class="user-name" id="sb-vendedor">Vendedor</div>
-        <div class="user-role">Representante</div>
+        <div class="user-role"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">conectando...</span></div>
       </div>
     </div>
   </div>
 </aside>
 
-<!-- ══════════ CONTENT ══════════ -->
+<!-- CONTENT -->
 <div class="content">
   <div class="topbar">
     <div class="page-title" id="topbar-title">Dashboard</div>
     <div class="topbar-actions">
       <button class="btn btn-primary" id="topbar-btn" onclick="topbarAction()">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Nova Cotação
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nova Cotação
       </button>
     </div>
   </div>
-
   <div class="page-area">
 
-    <!-- ═══ DASHBOARD ═══ -->
+    <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
       <div class="stats-row">
-        <div class="stat-card blue">
-          <div class="stat-label">Cotações</div>
-          <div class="stat-value" id="st-orc">0</div>
-          <div class="stat-sub">total geradas</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Clientes</div>
-          <div class="stat-value" id="st-cli">0</div>
-          <div class="stat-sub">cadastrados</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Produtos</div>
-          <div class="stat-value" id="st-prod">0</div>
-          <div class="stat-sub">no catálogo</div>
-        </div>
-        <div class="stat-card green">
-          <div class="stat-label">Valor Total</div>
-          <div class="stat-value" id="st-total" style="font-size:1.1rem;margin-top:6px;">R$ 0</div>
-          <div class="stat-sub">em cotações</div>
-        </div>
+        <div class="stat-card blue"><div class="stat-label">Cotações</div><div class="stat-value" id="st-orc">0</div><div class="stat-sub">total geradas</div></div>
+        <div class="stat-card"><div class="stat-label">Clientes</div><div class="stat-value" id="st-cli">0</div><div class="stat-sub">cadastrados</div></div>
+        <div class="stat-card"><div class="stat-label">Produtos</div><div class="stat-value" id="st-prod">0</div><div class="stat-sub">no catálogo</div></div>
+        <div class="stat-card green"><div class="stat-label">Valor Total</div><div class="stat-value" id="st-total" style="font-size:1.1rem;margin-top:6px;">R$ 0</div><div class="stat-sub">em cotações</div></div>
       </div>
-
       <div class="panel">
         <div class="panel-header">
-          <h3>
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
-            Últimas Cotações
-          </h3>
+          <h3><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Últimas Cotações</h3>
           <button class="btn btn-outline btn-sm" onclick="goTo('orcamentos',null)">Ver todas</button>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>#</th><th>Cliente</th><th>Data</th><th>Itens</th><th>Total</th><th>Status</th><th></th></tr></thead>
-            <tbody id="dash-table">
-              <tr><td colspan="7"><div class="empty-state"><div class="eicon">📄</div><p>Nenhuma cotação ainda.</p></div></td></tr>
-            </tbody>
-          </table>
-        </div>
+        <div class="table-wrap"><table><thead><tr><th>#</th><th>Cliente</th><th>Data</th><th>Itens</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody id="dash-table"><tr><td colspan="7"><div class="empty-state"><div class="eicon">📄</div><p>Nenhuma cotação ainda.</p></div></td></tr></tbody></table></div>
       </div>
     </div>
 
-    <!-- ═══ ORÇAMENTOS ═══ -->
+    <!-- ORÇAMENTOS -->
     <div class="page" id="page-orcamentos">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div>
-          <h2 style="font-size:1.1rem;font-weight:700;">Pedidos / Cotações</h2>
-          <p style="font-size:.78rem;color:var(--gray-500);" id="orc-count-label">0 cotações</p>
-        </div>
-        <button class="btn btn-primary" onclick="abrirNovaOrcamento()">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Nova Cotação
-        </button>
+        <div><h2 style="font-size:1.1rem;font-weight:700;">Pedidos / Cotações</h2><p style="font-size:.78rem;color:var(--gray-500);" id="orc-count-label">0 cotações</p></div>
+        <button class="btn btn-primary" onclick="abrirNovaOrcamento()"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nova Cotação</button>
       </div>
-      <div class="panel" style="padding:0;">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>#</th><th>Cliente</th><th>Emissão</th><th>Validade</th><th>Itens</th><th>Total</th><th>Status</th><th></th></tr></thead>
-            <tbody id="orc-tbody">
-              <tr><td colspan="8"><div class="empty-state"><div class="eicon">📄</div><p>Nenhuma cotação gerada ainda.</p></div></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div class="panel" style="padding:0;"><div class="table-wrap"><table><thead><tr><th>#</th><th>Cliente</th><th>Emissão</th><th>Validade</th><th>Itens</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody id="orc-tbody"><tr><td colspan="8"><div class="empty-state"><div class="eicon">📄</div><p>Nenhuma cotação gerada ainda.</p></div></td></tr></tbody></table></div></div>
     </div>
 
-    <!-- ═══ CLIENTES ═══ -->
+    <!-- CLIENTES -->
     <div class="page" id="page-clientes">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div>
-          <h2 style="font-size:1.1rem;font-weight:700;">Clientes</h2>
-          <p style="font-size:.78rem;color:var(--gray-500);" id="cli-count-label">0 cadastrados</p>
-        </div>
-        <button class="btn btn-primary" onclick="openModalCliente()">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Novo Cliente
-        </button>
+        <div><h2 style="font-size:1.1rem;font-weight:700;">Clientes</h2><p style="font-size:.78rem;color:var(--gray-500);" id="cli-count-label">0 cadastrados</p></div>
+        <button class="btn btn-primary" onclick="openModalCliente()"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo Cliente</button>
       </div>
-      <div class="panel" style="padding:0;">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Nome / Empresa</th><th>CPF/CNPJ</th><th>Telefone</th><th>Email</th><th>Cidade</th><th></th></tr></thead>
-            <tbody id="cli-tbody">
-              <tr><td colspan="6"><div class="empty-state"><div class="eicon">👥</div><p>Nenhum cliente cadastrado.</p></div></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div class="panel" style="padding:0;"><div class="table-wrap"><table><thead><tr><th>Nome / Empresa</th><th>CPF/CNPJ</th><th>Telefone</th><th>Email</th><th>Endereço</th><th></th></tr></thead><tbody id="cli-tbody"><tr><td colspan="6"><div class="empty-state"><div class="eicon">👥</div><p>Nenhum cliente cadastrado.</p></div></td></tr></tbody></table></div></div>
     </div>
 
-    <!-- ═══ PRODUTOS ═══ -->
+    <!-- PRODUTOS -->
     <div class="page" id="page-produtos">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div>
-          <h2 style="font-size:1.1rem;font-weight:700;">Produtos</h2>
-          <p style="font-size:.78rem;color:var(--gray-500);" id="prod-count-label">0 cadastrados</p>
-        </div>
-        <button class="btn btn-primary" onclick="openModalProduto()">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Novo Produto
-        </button>
+        <div><h2 style="font-size:1.1rem;font-weight:700;">Produtos</h2><p style="font-size:.78rem;color:var(--gray-500);" id="prod-count-label">0 cadastrados</p></div>
+        <button class="btn btn-primary" onclick="openModalProduto()"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo Produto</button>
       </div>
-      <div class="panel" style="padding:0;">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Foto</th><th>Código</th><th>Descrição</th><th>Categoria</th><th>Preço Tab.</th><th>Unid.</th><th></th></tr></thead>
-            <tbody id="prod-tbody">
-              <tr><td colspan="7"><div class="empty-state"><div class="eicon">📦</div><p>Nenhum produto cadastrado.</p></div></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div class="panel" style="padding:0;"><div class="table-wrap"><table><thead><tr><th>Foto</th><th>Código</th><th>Descrição</th><th>Categoria</th><th>Preço Tab.</th><th>Unid.</th><th></th></tr></thead><tbody id="prod-tbody"><tr><td colspan="7"><div class="empty-state"><div class="eicon">📦</div><p>Nenhum produto cadastrado.</p></div></td></tr></tbody></table></div></div>
     </div>
 
-    <!-- ═══ EMPRESA ═══ -->
+    <!-- EMPRESA -->
     <div class="page" id="page-empresa">
-      <div style="margin-bottom:16px;">
-        <h2 style="font-size:1.1rem;font-weight:700;">Minha Empresa</h2>
-        <p style="font-size:.78rem;color:var(--gray-500);">Dados que aparecem nas cotações</p>
-      </div>
-      <div class="panel" style="max-width:600px;">
-        <div class="panel-body">
-          <div class="empresa-img-wrap">
-            <div class="logo-upload" id="logo-upload-area">
-              <span id="logo-icon">🏢</span>
-              <input type="file" accept="image/*" onchange="handleLogoUpload(this)">
-              <img id="logo-preview" style="display:none;">
-            </div>
-            <div>
-              <div style="font-size:.78rem;font-weight:600;color:var(--gray-600);">Logo da empresa</div>
-              <div style="font-size:.72rem;color:var(--gray-400);margin-top:2px;">Aparece no cabeçalho das cotações</div>
-            </div>
-          </div>
-          <div class="form-row cols-2">
-            <div class="form-group"><label class="form-label">Nome da Empresa <span class="req">*</span></label><input class="form-control" id="emp-nome" placeholder="Sua Empresa Ltda"></div>
-            <div class="form-group"><label class="form-label">CNPJ</label><input class="form-control" id="emp-cnpj" placeholder="00.000.000/0001-00"></div>
-          </div>
-          <div class="form-row cols-2">
-            <div class="form-group"><label class="form-label">Nome do Vendedor</label><input class="form-control" id="emp-vendedor" placeholder="Adriano"></div>
-            <div class="form-group"><label class="form-label">Telefone / WhatsApp</label><input class="form-control" id="emp-tel" placeholder="(11) 99999-9999"></div>
-          </div>
-          <div class="form-group"><label class="form-label">Email Comercial</label><input class="form-control" id="emp-email" placeholder="vendas@empresa.com.br"></div>
-          <div class="form-group"><label class="form-label">Endereço</label><input class="form-control" id="emp-end" placeholder="Rua Exemplo, 123 — São Paulo, SP"></div>
-          <div class="form-group"><label class="form-label">Informações adicionais nas cotações</label><textarea class="form-control" id="emp-info" placeholder="Ex: Condições de pagamento padrão, prazo de entrega..."></textarea></div>
-          <button class="btn btn-primary" onclick="salvarEmpresa()">💾 Salvar configurações</button>
+      <div style="margin-bottom:16px;"><h2 style="font-size:1.1rem;font-weight:700;">Minha Empresa</h2><p style="font-size:.78rem;color:var(--gray-500);">Dados que aparecem nas cotações</p></div>
+      <div class="panel" style="max-width:600px;"><div class="panel-body">
+        <div class="empresa-img-wrap">
+          <div class="logo-upload" id="logo-upload-area"><span id="logo-icon">🏢</span><input type="file" accept="image/*" onchange="handleLogoUpload(this)"><img id="logo-preview" style="display:none;"></div>
+          <div><div style="font-size:.78rem;font-weight:600;color:var(--gray-600);">Logo da empresa</div><div style="font-size:.72rem;color:var(--gray-400);margin-top:2px;">Aparece no cabeçalho das cotações</div></div>
         </div>
-      </div>
+        <div class="form-row cols-2">
+          <div class="form-group"><label class="form-label">Nome da Empresa <span class="req">*</span></label><input class="form-control" id="emp-nome" placeholder="Sua Empresa Ltda"></div>
+          <div class="form-group"><label class="form-label">CNPJ</label><input class="form-control" id="emp-cnpj" placeholder="00.000.000/0001-00"></div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group"><label class="form-label">Nome do Vendedor</label><input class="form-control" id="emp-vendedor" placeholder="Adriano"></div>
+          <div class="form-group"><label class="form-label">Telefone / WhatsApp</label><input class="form-control" id="emp-tel" placeholder="(11) 99999-9999"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Email Comercial</label><input class="form-control" id="emp-email" placeholder="vendas@empresa.com.br"></div>
+        <div class="form-group"><label class="form-label">Endereço</label><input class="form-control" id="emp-end" placeholder="Rua Exemplo, 123 — São Paulo, SP"></div>
+        <div class="form-group"><label class="form-label">Informações adicionais nas cotações</label><textarea class="form-control" id="emp-info" placeholder="Ex: Condições de pagamento padrão, prazo de entrega..."></textarea></div>
+        <button class="btn btn-primary" onclick="salvarEmpresa()">💾 Salvar configurações</button>
+      </div></div>
     </div>
 
-  </div><!-- /page-area -->
-</div><!-- /content -->
-</div><!-- /layout -->
-
-<!-- ═══════════════════════ MODAIS ═══════════════════════ -->
-
-<!-- MODAL CLIENTE -->
-<div class="overlay" id="ov-cliente">
-  <div class="modal modal-md">
-    <div class="modal-head">
-      <h3 id="cli-modal-title">Novo Cliente</h3>
-      <button class="close-btn" onclick="closeOv('ov-cliente')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="cli-id">
-      <div class="form-row cols-2">
-        <div class="form-group"><label class="form-label">Nome / Razão Social <span class="req">*</span></label><input class="form-control" id="cli-nome" placeholder="Nome completo ou empresa"></div>
-        <div class="form-group"><label class="form-label">CPF / CNPJ</label><input class="form-control" id="cli-doc" placeholder="000.000.000-00"></div>
-      </div>
-      <div class="form-row cols-2">
-        <div class="form-group"><label class="form-label">Telefone / WhatsApp</label><input class="form-control" id="cli-tel" placeholder="(11) 99999-9999"></div>
-        <div class="form-group"><label class="form-label">Email</label><input class="form-control" id="cli-email" placeholder="cliente@email.com"></div>
-      </div>
-      <div class="form-group"><label class="form-label">Endereço completo</label><input class="form-control" id="cli-end" placeholder="Rua, nº, bairro, cidade - Estado"></div>
-      <div class="form-group"><label class="form-label">Observações</label><textarea class="form-control" id="cli-obs" placeholder="Anotações sobre o cliente..."></textarea></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-outline" onclick="closeOv('ov-cliente')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarCliente()">Salvar Cliente</button>
-    </div>
   </div>
 </div>
-
-<!-- MODAL PRODUTO -->
-<div class="overlay" id="ov-produto">
-  <div class="modal modal-md">
-    <div class="modal-head">
-      <h3 id="prod-modal-title">Novo Produto</h3>
-      <button class="close-btn" onclick="closeOv('ov-produto')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="prod-id">
-      <div style="display:flex;gap:16px;margin-bottom:16px;align-items:flex-start;">
-        <div class="foto-upload" id="foto-upload-area">
-          <span id="foto-icon">📷</span>
-          <input type="file" accept="image/*" onchange="handleFotoUpload(this)">
-          <img id="foto-preview" style="display:none;">
-        </div>
-        <div style="flex:1;">
-          <div class="form-group"><label class="form-label">Descrição / Nome <span class="req">*</span></label><input class="form-control" id="prod-nome" placeholder="Ex: DISCO DE CORTE ABRASIVO..."></div>
-          <div class="form-row cols-2">
-            <div class="form-group"><label class="form-label">Código / SKU</label><input class="form-control" id="prod-sku" placeholder="A00688"></div>
-            <div class="form-group"><label class="form-label">Categoria</label><input class="form-control" id="prod-cat" placeholder="Ex: Abrasivos"></div>
-          </div>
-        </div>
-      </div>
-      <div class="form-row cols-3">
-        <div class="form-group"><label class="form-label">Preço Tabela (R$) <span class="req">*</span></label><input class="form-control" id="prod-preco" type="number" step="0.01" min="0" placeholder="0,00"></div>
-        <div class="form-group"><label class="form-label">Unidade</label>
-          <select class="form-control" id="prod-unid">
-            <option value="PC">PC — Peça</option><option value="UN">UN — Unidade</option><option value="CX">CX — Caixa</option><option value="KG">KG — Quilograma</option><option value="MT">MT — Metro</option><option value="LT">LT — Litro</option><option value="GR">GR — Grama</option><option value="M²">M² — Metro²</option>
-          </select>
-        </div>
-        <div class="form-group"><label class="form-label">Peso bruto (kg)</label><input class="form-control" id="prod-peso" type="number" step="0.001" min="0" placeholder="0.000"></div>
-      </div>
-      <div class="form-group"><label class="form-label">Descrição / Especificações</label><textarea class="form-control" id="prod-desc" placeholder="Detalhes, especificações técnicas..."></textarea></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-outline" onclick="closeOv('ov-produto')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarProduto()">Salvar Produto</button>
-    </div>
-  </div>
 </div>
 
-<!-- MODAL ORÇAMENTO (BUILDER) -->
-<div class="overlay" id="ov-orcamento">
-  <div class="modal modal-xl">
-    <div class="modal-head">
-      <h3 id="orc-modal-title">Nova Cotação</h3>
-      <button class="close-btn" onclick="closeOv('ov-orcamento')">✕</button>
+<!-- MODAIS -->
+<!-- CLIENTE -->
+<div class="overlay" id="ov-cliente"><div class="modal modal-md">
+  <div class="modal-head"><h3 id="cli-modal-title">Novo Cliente</h3><button class="close-btn" onclick="closeOv('ov-cliente')">✕</button></div>
+  <div class="modal-body">
+    <input type="hidden" id="cli-id">
+    <div class="form-row cols-2">
+      <div class="form-group"><label class="form-label">Nome / Razão Social <span class="req">*</span></label><input class="form-control" id="cli-nome" placeholder="Nome completo ou empresa"></div>
+      <div class="form-group"><label class="form-label">CPF / CNPJ</label><input class="form-control" id="cli-doc" placeholder="000.000.000-00"></div>
     </div>
-    <div class="modal-body" style="display:grid;grid-template-columns:1fr 360px;gap:20px;">
-      <!-- Coluna esquerda: cliente + produtos -->
+    <div class="form-row cols-2">
+      <div class="form-group"><label class="form-label">Telefone / WhatsApp</label><input class="form-control" id="cli-tel" placeholder="(11) 99999-9999"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-control" id="cli-email" placeholder="cliente@email.com"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Endereço completo</label><input class="form-control" id="cli-end" placeholder="Rua, nº, bairro, cidade - Estado"></div>
+    <div class="form-group"><label class="form-label">Observações</label><textarea class="form-control" id="cli-obs" placeholder="Anotações sobre o cliente..."></textarea></div>
+  </div>
+  <div class="modal-foot"><button class="btn btn-outline" onclick="closeOv('ov-cliente')">Cancelar</button><button class="btn btn-primary" onclick="salvarCliente()">Salvar Cliente</button></div>
+</div></div>
+
+<!-- PRODUTO -->
+<div class="overlay" id="ov-produto"><div class="modal modal-md">
+  <div class="modal-head"><h3 id="prod-modal-title">Novo Produto</h3><button class="close-btn" onclick="closeOv('ov-produto')">✕</button></div>
+  <div class="modal-body">
+    <input type="hidden" id="prod-id">
+    <div style="display:flex;gap:16px;margin-bottom:16px;align-items:flex-start;">
+      <div class="foto-upload" id="foto-upload-area"><span id="foto-icon">📷</span><input type="file" accept="image/*" onchange="handleFotoUpload(this)"><img id="foto-preview" style="display:none;"></div>
+      <div style="flex:1;">
+        <div class="form-group"><label class="form-label">Descrição / Nome <span class="req">*</span></label><input class="form-control" id="prod-nome" placeholder="Ex: DISCO DE CORTE ABRASIVO..."></div>
+        <div class="form-row cols-2">
+          <div class="form-group"><label class="form-label">Código / SKU</label><input class="form-control" id="prod-sku" placeholder="A00688"></div>
+          <div class="form-group"><label class="form-label">Categoria</label><input class="form-control" id="prod-cat" placeholder="Ex: Abrasivos"></div>
+        </div>
+      </div>
+    </div>
+    <div class="form-row cols-3">
+      <div class="form-group"><label class="form-label">Preço Tabela (R$) <span class="req">*</span></label><input class="form-control" id="prod-preco" type="number" step="0.01" min="0" placeholder="0,00"></div>
+      <div class="form-group"><label class="form-label">Unidade</label><select class="form-control" id="prod-unid"><option value="PC">PC — Peça</option><option value="UN">UN — Unidade</option><option value="CX">CX — Caixa</option><option value="KG">KG — Quilograma</option><option value="MT">MT — Metro</option><option value="LT">LT — Litro</option><option value="GR">GR — Grama</option><option value="M²">M² — Metro²</option></select></div>
+      <div class="form-group"><label class="form-label">Peso bruto (kg)</label><input class="form-control" id="prod-peso" type="number" step="0.001" min="0" placeholder="0.000"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Descrição / Especificações</label><textarea class="form-control" id="prod-desc" placeholder="Detalhes, especificações técnicas..."></textarea></div>
+  </div>
+  <div class="modal-foot"><button class="btn btn-outline" onclick="closeOv('ov-produto')">Cancelar</button><button class="btn btn-primary" onclick="salvarProduto()">Salvar Produto</button></div>
+</div></div>
+
+<!-- ORÇAMENTO BUILDER -->
+<div class="overlay" id="ov-orcamento"><div class="modal modal-xl">
+  <div class="modal-head"><h3 id="orc-modal-title">Nova Cotação</h3><button class="close-btn" onclick="closeOv('ov-orcamento')">✕</button></div>
+  <div class="modal-body">
+    <div class="modal-body-orc-grid" style="display:grid;grid-template-columns:1fr 360px;gap:20px;">
       <div>
-        <!-- Cliente -->
         <div class="panel" style="margin-bottom:14px;">
           <div class="panel-header"><h3>👤 Cliente</h3></div>
           <div class="panel-body" style="padding:14px;">
             <div class="form-row cols-2">
-              <div class="form-group" style="margin:0;">
-                <label class="form-label">Selecionar Cliente <span class="req">*</span></label>
-                <select class="form-control" id="orc-cliente-sel" onchange="onClienteChange()">
-                  <option value="">— Selecione —</option>
-                </select>
-              </div>
+              <div class="form-group" style="margin:0;"><label class="form-label">Selecionar Cliente <span class="req">*</span></label><select class="form-control" id="orc-cliente-sel" onchange="onClienteChange()"><option value="">— Selecione —</option></select></div>
               <div id="orc-cli-info" style="font-size:.75rem;color:var(--gray-500);padding-top:18px;"></div>
             </div>
           </div>
         </div>
-
-        <!-- Catálogo de produtos -->
         <div class="panel" style="margin-bottom:14px;">
           <div class="panel-header"><h3>📦 Adicionar Produtos</h3></div>
           <div class="panel-body" style="padding:14px;">
-            <div class="search-wrap" style="margin-bottom:10px;">
-              <svg class="search-icon" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input class="form-control" id="prod-search" placeholder="Buscar produto..." oninput="renderProdPicker()">
-            </div>
+            <div class="search-wrap" style="margin-bottom:10px;"><svg class="search-icon" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="form-control" id="prod-search" placeholder="Buscar produto..." oninput="renderProdPicker()"></div>
             <div class="prod-picker" id="prod-picker"></div>
           </div>
         </div>
-
-        <!-- Itens adicionados -->
         <div class="panel">
-          <div class="panel-header">
-            <h3>🧾 Itens do Pedido</h3>
-            <span style="font-size:.72rem;color:var(--gray-400);" id="orc-item-count">0 itens</span>
-          </div>
-          <div class="panel-body" style="padding:14px;">
-            <div id="orc-items-wrap">
-              <div class="empty-state" style="padding:20px;"><p>Selecione produtos acima.</p></div>
-            </div>
-          </div>
+          <div class="panel-header"><h3>🧾 Itens do Pedido</h3><span style="font-size:.72rem;color:var(--gray-400);" id="orc-item-count">0 itens</span></div>
+          <div class="panel-body" style="padding:14px;"><div id="orc-items-wrap"><div class="empty-state" style="padding:20px;"><p>Selecione produtos acima.</p></div></div></div>
         </div>
       </div>
-
-      <!-- Coluna direita: totais + detalhes -->
       <div>
-        <!-- Totais -->
         <div class="panel" style="margin-bottom:14px;">
           <div class="panel-header"><h3>💰 Resumo</h3></div>
           <div class="panel-body" style="padding:14px;">
@@ -661,8 +440,6 @@ textarea.form-control { resize: vertical; min-height: 72px; }
             </div>
           </div>
         </div>
-
-        <!-- Detalhes -->
         <div class="panel">
           <div class="panel-header"><h3>📋 Detalhes</h3></div>
           <div class="panel-body" style="padding:14px;">
@@ -670,70 +447,142 @@ textarea.form-control { resize: vertical; min-height: 72px; }
               <div class="form-group" style="margin:0;"><label class="form-label">Data emissão</label><input class="form-control" type="date" id="orc-data"></div>
               <div class="form-group" style="margin:0;"><label class="form-label">Válido até</label><input class="form-control" type="date" id="orc-validade"></div>
             </div>
-            <div class="form-group"><label class="form-label">Cond. pagamento</label>
-              <select class="form-control" id="orc-cond">
-                <option>PRAZOS FATURAMENTO</option><option>À VISTA</option><option>30 DIAS</option><option>30/60 DIAS</option><option>30/60/90 DIAS</option><option>BOLETO</option><option>PIX</option><option>CARTÃO CRÉDITO</option>
-              </select>
-            </div>
-            <div class="form-group"><label class="form-label">Forma de pagamento</label>
-              <select class="form-control" id="orc-forma">
-                <option>BOLETO</option><option>PIX</option><option>TRANSFERÊNCIA</option><option>CARTÃO CRÉDITO</option><option>DINHEIRO</option>
-              </select>
-            </div>
-            <div class="form-group"><label class="form-label">Frete</label>
-              <select class="form-control" id="orc-frete">
-                <option>CIF (SP CAPITAL)</option><option>CIF</option><option>FOB</option><option>A COMBINAR</option>
-              </select>
-            </div>
+            <div class="form-group"><label class="form-label">Cond. pagamento</label><select class="form-control" id="orc-cond"><option>PRAZOS FATURAMENTO</option><option>À VISTA</option><option>30 DIAS</option><option>30/60 DIAS</option><option>30/60/90 DIAS</option><option>BOLETO</option><option>PIX</option><option>CARTÃO CRÉDITO</option></select></div>
+            <div class="form-group"><label class="form-label">Forma de pagamento</label><select class="form-control" id="orc-forma"><option>BOLETO</option><option>PIX</option><option>TRANSFERÊNCIA</option><option>CARTÃO CRÉDITO</option><option>DINHEIRO</option></select></div>
+            <div class="form-group"><label class="form-label">Frete</label><select class="form-control" id="orc-frete"><option>CIF (SP CAPITAL)</option><option>CIF</option><option>FOB</option><option>A COMBINAR</option></select></div>
             <div class="form-group"><label class="form-label">Observações</label><textarea class="form-control" id="orc-obs" rows="3" placeholder="Informações adicionais..."></textarea></div>
           </div>
         </div>
       </div>
     </div>
-    <div class="modal-foot">
-      <button class="btn btn-outline" onclick="closeOv('ov-orcamento')">Cancelar</button>
-      <button class="btn btn-primary btn-lg" onclick="salvarOrcamento()">💾 Salvar Cotação</button>
-    </div>
   </div>
-</div>
+  <div class="modal-foot"><button class="btn btn-outline" onclick="closeOv('ov-orcamento')">Cancelar</button><button class="btn btn-primary btn-lg" onclick="salvarOrcamento()">💾 Salvar Cotação</button></div>
+</div></div>
 
-<!-- MODAL VER COTAÇÃO -->
-<div class="overlay" id="ov-ver">
-  <div class="modal modal-xl">
-    <div class="modal-head">
-      <h3 id="ver-title">Cotação #001</h3>
-      <button class="close-btn" onclick="closeOv('ov-ver')">✕</button>
-    </div>
-    <div class="modal-body" id="ver-body"></div>
-    <div class="modal-foot">
-      <button class="btn btn-outline" onclick="closeOv('ov-ver')">Fechar</button>
-      <button class="btn btn-outline" onclick="imprimirAtual()">🖨️ Imprimir / PDF</button>
-      <button class="btn btn-whatsapp" onclick="compartilharWpp()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/></svg>
-        WhatsApp
-      </button>
-      <button class="btn btn-primary" onclick="enviarEmail()">✉️ Email</button>
-    </div>
+<!-- VER COTAÇÃO -->
+<div class="overlay" id="ov-ver"><div class="modal modal-xl">
+  <div class="modal-head"><h3 id="ver-title">Cotação</h3><button class="close-btn" onclick="closeOv('ov-ver')">✕</button></div>
+  <div class="modal-body" id="ver-body"></div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeOv('ov-ver')">Fechar</button>
+    <button class="btn btn-outline" onclick="imprimirAtual()">🖨️ Imprimir / PDF</button>
+    <button class="btn btn-whatsapp" onclick="compartilharWpp()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/></svg>WhatsApp
+    </button>
+    <button class="btn btn-primary" onclick="enviarEmail()">✉️ Email</button>
   </div>
-</div>
+</div></div>
 
-<!-- HIDDEN PRINT AREA -->
-<div id="print-doc"></div>
+<!-- BOTTOM NAV -->
+<div class="bottom-nav"><div class="bottom-nav-inner">
+  <button class="bn-item active" id="bn-dashboard" onclick="goTo('dashboard',null)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Início
+  </button>
+  <button class="bn-item" id="bn-clientes" onclick="goTo('clientes',null)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes
+  </button>
+  <button class="bn-fab" onclick="abrirNovaOrcamento()"><div class="bn-fab-inner"><svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></button>
+  <button class="bn-item" id="bn-produtos" onclick="goTo('produtos',null)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Produtos
+  </button>
+  <button class="bn-item" id="bn-orcamentos" onclick="goTo('orcamentos',null)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Cotações
+  </button>
+</div></div>
 
-<!-- ══════════ TOAST ══════════ -->
-
+<div id="toast" style="position:fixed;bottom:80px;right:16px;background:#1f2937;color:#fff;padding:10px 18px;border-radius:8px;font-size:.82rem;font-weight:500;box-shadow:0 10px 15px rgba(0,0,0,0.1);display:none;z-index:9998;transition:opacity .3s;">Salvo!</div>
 
 <script>
-// ═══════════════════════ DATA ═══════════════════════
+// ══════════ LOGIN ══════════
+const SENHA = '2904';
+function doLogin(){
+  const v = document.getElementById('login-senha').value;
+  if(v === SENHA){
+    document.getElementById('login-screen').style.display='none';
+    initFirebase();
+  } else {
+    document.getElementById('login-err').style.display='block';
+    document.getElementById('login-senha').value='';
+    document.getElementById('login-senha').focus();
+  }
+}
+
+// ══════════ FIREBASE ══════════
+// Configuração do Firebase — banco gratuito para sincronização
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDemo-substitua-pela-sua-chave",
+  authDomain: "orcapro-demo.firebaseapp.com",
+  databaseURL: "https://orcapro-demo-default-rtdb.firebaseio.com",
+  projectId: "orcapro-demo"
+};
+
 let DB = { clientes:[], produtos:[], orcamentos:[], empresa:{nome:'Minha Empresa',cnpj:'',vendedor:'Vendedor',tel:'',email:'',end:'',info:'',logo:''} };
-let ORC = { itens:[], id:null };
-let currentViewId = null;
+let firebaseDB = null;
+let useFirebase = false;
 
-function load(){ const s=localStorage.getItem('orcapro2'); if(s) DB=JSON.parse(s); }
-function save(){ localStorage.setItem('orcapro2',JSON.stringify(DB)); }
-load();
+function setSyncStatus(status, label){
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  if(dot){ dot.className='sync-dot '+status; }
+  if(lbl){ lbl.textContent = label; }
+}
 
-// ═══════════════════════ UTILS ═══════════════════════
+function initFirebase(){
+  // Tenta conectar ao Firebase. Se falhar, usa localStorage.
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseDB = firebase.database();
+    setSyncStatus('syncing','conectando...');
+
+    // Escuta mudanças em tempo real
+    firebaseDB.ref('orcapro').on('value', snap => {
+      const data = snap.val();
+      if(data){
+        DB = { ...DB, ...data };
+        // restaurar arrays se vieram como objetos do Firebase
+        ['clientes','produtos','orcamentos'].forEach(k=>{
+          if(DB[k] && !Array.isArray(DB[k])) DB[k] = Object.values(DB[k]);
+          if(!DB[k]) DB[k] = [];
+        });
+      }
+      setSyncStatus('ok','sincronizado ✓');
+      renderAll();
+      loadEmpresaForm();
+    }, err => {
+      setSyncStatus('err','offline');
+      loadFromLocal();
+    });
+
+  } catch(e) {
+    setSyncStatus('err','modo local');
+    loadFromLocal();
+  }
+}
+
+function loadFromLocal(){
+  const s = localStorage.getItem('orcapro2');
+  if(s){ try{ DB = JSON.parse(s); }catch(e){} }
+  renderAll();
+  loadEmpresaForm();
+}
+
+function save(){
+  // Salva local sempre
+  localStorage.setItem('orcapro2', JSON.stringify(DB));
+  // Tenta salvar no Firebase
+  if(firebaseDB){
+    setSyncStatus('syncing','salvando...');
+    firebaseDB.ref('orcapro').set({
+      clientes: DB.clientes,
+      produtos: DB.produtos,
+      orcamentos: DB.orcamentos,
+      empresa: { ...DB.empresa, logo:'' } // não salvar logo no Firebase (muito grande)
+    }).then(()=> setSyncStatus('ok','sincronizado ✓'))
+      .catch(()=> setSyncStatus('err','erro ao salvar'));
+  }
+}
+
+// ══════════ UTILS ══════════
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2); }
 function fmt(v){ return 'R$ '+(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtD(d){ if(!d) return '—'; return new Date(d+'T12:00:00').toLocaleDateString('pt-BR'); }
@@ -743,41 +592,38 @@ function toast(msg,ms=2200){ const el=document.getElementById('toast'); el.textC
 function openOv(id){ document.getElementById(id).classList.add('open'); }
 function closeOv(id){ document.getElementById(id).classList.remove('open'); }
 
-// ═══════════════════════ NAV ═══════════════════════
-const TITLES = { dashboard:'Dashboard', orcamentos:'Pedidos / Cotações', clientes:'Clientes', produtos:'Produtos', empresa:'Minha Empresa' };
-const BTN_MAP = { dashboard:'Nova Cotação', orcamentos:'Nova Cotação', clientes:'Novo Cliente', produtos:'Novo Produto', empresa:null };
-let currentPage = 'dashboard';
+// ══════════ NAV ══════════
+const TITLES={dashboard:'Dashboard',orcamentos:'Pedidos / Cotações',clientes:'Clientes',produtos:'Produtos',empresa:'Minha Empresa'};
+const BTN_MAP={dashboard:'Nova Cotação',orcamentos:'Nova Cotação',clientes:'Novo Cliente',produtos:'Novo Produto',empresa:null};
+let currentPage='dashboard';
+let ORC={itens:[],id:null};
+let currentViewId=null;
 
 function goTo(page, navEl){
-  currentPage = page;
+  currentPage=page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(navEl) navEl.classList.add('active');
-  else { const n=document.querySelector(`[data-page="${page}"]`); if(n) n.classList.add('active'); }
-  document.getElementById('topbar-title').textContent = TITLES[page]||page;
+  else { const n=document.querySelector('[data-page="'+page+'"]'); if(n) n.classList.add('active'); }
+  document.getElementById('topbar-title').textContent=TITLES[page]||page;
   const btn=document.getElementById('topbar-btn');
-  if(BTN_MAP[page]){ btn.style.display='inline-flex'; btn.innerHTML=`<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${BTN_MAP[page]}`; }
+  if(BTN_MAP[page]){ btn.style.display='inline-flex'; btn.innerHTML='<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'+BTN_MAP[page]; }
   else btn.style.display='none';
+  ['dashboard','clientes','produtos','orcamentos'].forEach(p=>{ const el=document.getElementById('bn-'+p); if(el) el.classList.toggle('active',p===page); });
   renderAll();
 }
-
 function topbarAction(){
   if(currentPage==='clientes') openModalCliente();
   else if(currentPage==='produtos') openModalProduto();
   else abrirNovaOrcamento();
 }
 
-// ═══════════════════════ EMPRESA ═══════════════════════
+// ══════════ EMPRESA ══════════
 function handleLogoUpload(inp){
   const f=inp.files[0]; if(!f) return;
   const r=new FileReader();
-  r.onload=e=>{
-    DB.empresa.logo=e.target.result;
-    const img=document.getElementById('logo-preview');
-    img.src=e.target.result; img.style.display='block';
-    document.getElementById('logo-icon').style.display='none';
-  };
+  r.onload=e=>{ DB.empresa.logo=e.target.result; const img=document.getElementById('logo-preview'); img.src=e.target.result; img.style.display='block'; document.getElementById('logo-icon').style.display='none'; };
   r.readAsDataURL(f);
 }
 function salvarEmpresa(){
@@ -796,17 +642,14 @@ function salvarEmpresa(){
 }
 function loadEmpresaForm(){
   const e=DB.empresa;
-  document.getElementById('emp-nome').value=e.nome||'';
-  document.getElementById('emp-cnpj').value=e.cnpj||'';
-  document.getElementById('emp-vendedor').value=e.vendedor||'';
-  document.getElementById('emp-tel').value=e.tel||'';
-  document.getElementById('emp-email').value=e.email||'';
-  document.getElementById('emp-end').value=e.end||'';
-  document.getElementById('emp-info').value=e.info||'';
+  ['nome','cnpj','vendedor','tel','email','end','info'].forEach(f=>{ const el=document.getElementById('emp-'+f); if(el) el.value=e[f]||''; });
+  document.getElementById('sb-brand').textContent=e.nome||'OrçaPro';
+  document.getElementById('sb-vendedor').textContent=e.vendedor||'Vendedor';
+  document.getElementById('sb-avatar').textContent=(e.vendedor||e.nome||'V')[0].toUpperCase();
   if(e.logo){ const img=document.getElementById('logo-preview'); img.src=e.logo; img.style.display='block'; document.getElementById('logo-icon').style.display='none'; }
 }
 
-// ═══════════════════════ CLIENTES ═══════════════════════
+// ══════════ CLIENTES ══════════
 function openModalCliente(id){
   ['cli-id','cli-nome','cli-doc','cli-tel','cli-email','cli-end','cli-obs'].forEach(f=>document.getElementById(f).value='');
   document.getElementById('cli-modal-title').textContent=id?'Editar Cliente':'Novo Cliente';
@@ -816,7 +659,7 @@ function openModalCliente(id){
 function salvarCliente(){
   const nome=document.getElementById('cli-nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
   const id=document.getElementById('cli-id').value||uid();
-  const obj={ id, nome, doc:document.getElementById('cli-doc').value, tel:document.getElementById('cli-tel').value, email:document.getElementById('cli-email').value, end:document.getElementById('cli-end').value, obs:document.getElementById('cli-obs').value };
+  const obj={id,nome,doc:document.getElementById('cli-doc').value,tel:document.getElementById('cli-tel').value,email:document.getElementById('cli-email').value,end:document.getElementById('cli-end').value,obs:document.getElementById('cli-obs').value};
   const i=DB.clientes.findIndex(x=>x.id===id); if(i>=0) DB.clientes[i]=obj; else DB.clientes.push(obj);
   save(); closeOv('ov-cliente'); renderAll(); toast('✅ Cliente salvo!');
 }
@@ -826,21 +669,10 @@ function renderClientes(){
   document.getElementById('cli-count-label').textContent=DB.clientes.length+' cadastrados';
   document.getElementById('nb-cli').textContent=DB.clientes.length;
   if(!DB.clientes.length){ tbody.innerHTML='<tr><td colspan="6"><div class="empty-state"><div class="eicon">👥</div><p>Nenhum cliente cadastrado.</p></div></td></tr>'; return; }
-  tbody.innerHTML=DB.clientes.map(c=>`
-    <tr>
-      <td><div style="font-weight:600;">${c.nome}</div>${c.obs?`<div style="font-size:.7rem;color:var(--gray-400);">${c.obs}</div>`:''}</td>
-      <td>${c.doc||'—'}</td>
-      <td>${c.tel||'—'}</td>
-      <td>${c.email||'—'}</td>
-      <td>${c.end||'—'}</td>
-      <td style="text-align:right;white-space:nowrap;">
-        <button class="btn btn-ghost btn-sm btn-icon" onclick="openModalCliente('${c.id}')" title="Editar">✏️</button>
-        <button class="btn btn-ghost btn-sm btn-icon" onclick="excluirCliente('${c.id}')" title="Excluir">🗑️</button>
-      </td>
-    </tr>`).join('');
+  tbody.innerHTML=DB.clientes.map(c=>`<tr><td><div style="font-weight:600;">${c.nome}</div>${c.obs?`<div style="font-size:.7rem;color:var(--gray-400);">${c.obs}</div>`:''}</td><td>${c.doc||'—'}</td><td>${c.tel||'—'}</td><td>${c.email||'—'}</td><td>${c.end||'—'}</td><td style="text-align:right;white-space:nowrap;"><button class="btn btn-ghost btn-sm btn-icon" onclick="openModalCliente('${c.id}')">✏️</button><button class="btn btn-ghost btn-sm btn-icon" onclick="excluirCliente('${c.id}')">🗑️</button></td></tr>`).join('');
 }
 
-// ═══════════════════════ PRODUTOS ═══════════════════════
+// ══════════ PRODUTOS ══════════
 function handleFotoUpload(inp){
   const f=inp.files[0]; if(!f) return;
   const r=new FileReader();
@@ -853,25 +685,16 @@ function openModalProduto(id){
   document.getElementById('foto-preview').style.display='none'; document.getElementById('foto-preview').src='';
   document.getElementById('foto-icon').style.display='';
   document.getElementById('prod-modal-title').textContent=id?'Editar Produto':'Novo Produto';
-  if(id){ const p=DB.produtos.find(x=>x.id===id); if(p){
-    document.getElementById('prod-id').value=p.id;
-    document.getElementById('prod-nome').value=p.nome||'';
-    document.getElementById('prod-sku').value=p.sku||'';
-    document.getElementById('prod-cat').value=p.cat||'';
-    document.getElementById('prod-preco').value=p.preco||'';
-    document.getElementById('prod-unid').value=p.unid||'PC';
-    document.getElementById('prod-peso').value=p.peso||'';
-    document.getElementById('prod-desc').value=p.desc||'';
-    if(p.foto){ const img=document.getElementById('foto-preview'); img.src=p.foto; img.style.display='block'; document.getElementById('foto-icon').style.display='none'; }
-  }}
+  if(id){ const p=DB.produtos.find(x=>x.id===id); if(p){ document.getElementById('prod-id').value=p.id; document.getElementById('prod-nome').value=p.nome||''; document.getElementById('prod-sku').value=p.sku||''; document.getElementById('prod-cat').value=p.cat||''; document.getElementById('prod-preco').value=p.preco||''; document.getElementById('prod-unid').value=p.unid||'PC'; document.getElementById('prod-peso').value=p.peso||''; document.getElementById('prod-desc').value=p.desc||''; if(p.foto){ const img=document.getElementById('foto-preview'); img.src=p.foto; img.style.display='block'; document.getElementById('foto-icon').style.display='none'; } } }
   openOv('ov-produto');
 }
 function salvarProduto(){
   const nome=document.getElementById('prod-nome').value.trim(); if(!nome){ alert('Informe a descrição.'); return; }
   const preco=parseFloat(document.getElementById('prod-preco').value); if(isNaN(preco)||preco<0){ alert('Informe um preço válido.'); return; }
   const id=document.getElementById('prod-id').value||uid();
-  const foto=document.getElementById('foto-preview').style.display!=='none'?document.getElementById('foto-preview').src:'';
-  const obj={ id, nome, sku:document.getElementById('prod-sku').value, cat:document.getElementById('prod-cat').value, preco, unid:document.getElementById('prod-unid').value, peso:parseFloat(document.getElementById('prod-peso').value)||0, desc:document.getElementById('prod-desc').value, foto };
+  const fotoEl=document.getElementById('foto-preview');
+  const foto=fotoEl.style.display!=='none'?fotoEl.src:'';
+  const obj={id,nome,sku:document.getElementById('prod-sku').value,cat:document.getElementById('prod-cat').value,preco,unid:document.getElementById('prod-unid').value,peso:parseFloat(document.getElementById('prod-peso').value)||0,desc:document.getElementById('prod-desc').value,foto};
   const i=DB.produtos.findIndex(x=>x.id===id); if(i>=0) DB.produtos[i]=obj; else DB.produtos.push(obj);
   save(); closeOv('ov-produto'); renderAll(); toast('✅ Produto salvo!');
 }
@@ -881,28 +704,15 @@ function renderProdutos(){
   document.getElementById('prod-count-label').textContent=DB.produtos.length+' cadastrados';
   document.getElementById('nb-prod').textContent=DB.produtos.length;
   if(!DB.produtos.length){ tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="eicon">📦</div><p>Nenhum produto cadastrado.</p></div></td></tr>'; return; }
-  tbody.innerHTML=DB.produtos.map(p=>`
-    <tr>
-      <td><div class="product-thumb">${p.foto?`<img src="${p.foto}" alt="">`:'📦'}</div></td>
-      <td><span class="tag">${p.sku||'—'}</span></td>
-      <td><div style="font-weight:600;font-size:.82rem;">${p.nome}</div>${p.desc?`<div style="font-size:.7rem;color:var(--gray-400);max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.desc}</div>`:''}</td>
-      <td>${p.cat||'—'}</td>
-      <td style="font-weight:700;color:var(--primary);">${fmt(p.preco)}</td>
-      <td>${p.unid}</td>
-      <td style="text-align:right;white-space:nowrap;">
-        <button class="btn btn-ghost btn-sm btn-icon" onclick="openModalProduto('${p.id}')" title="Editar">✏️</button>
-        <button class="btn btn-ghost btn-sm btn-icon" onclick="excluirProduto('${p.id}')" title="Excluir">🗑️</button>
-      </td>
-    </tr>`).join('');
+  tbody.innerHTML=DB.produtos.map(p=>`<tr><td><div class="product-thumb">${p.foto?`<img src="${p.foto}" alt="">`:' 📦'}</div></td><td><span class="tag">${p.sku||'—'}</span></td><td><div style="font-weight:600;font-size:.82rem;">${p.nome}</div>${p.desc?`<div style="font-size:.7rem;color:var(--gray-400);max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.desc}</div>`:''}</td><td>${p.cat||'—'}</td><td style="font-weight:700;color:var(--primary);">${fmt(p.preco)}</td><td>${p.unid}</td><td style="text-align:right;white-space:nowrap;"><button class="btn btn-ghost btn-sm btn-icon" onclick="openModalProduto('${p.id}')">✏️</button><button class="btn btn-ghost btn-sm btn-icon" onclick="excluirProduto('${p.id}')">🗑️</button></td></tr>`).join('');
 }
 
-// ═══════════════════════ ORÇAMENTO BUILDER ═══════════════════════
+// ══════════ ORÇAMENTO BUILDER ══════════
 function abrirNovaOrcamento(){
-  ORC={ itens:[], id:null };
-  // preencher selects
+  ORC={itens:[],id:null};
   const sel=document.getElementById('orc-cliente-sel');
   sel.innerHTML='<option value="">— Selecione —</option>'+DB.clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
-  document.getElementById('orc-obs').value='';
+  ['orc-obs'].forEach(f=>document.getElementById(f).value='');
   document.getElementById('orc-cond').value='PRAZOS FATURAMENTO';
   document.getElementById('orc-forma').value='BOLETO';
   document.getElementById('orc-frete').value='CIF (SP CAPITAL)';
@@ -914,7 +724,6 @@ function abrirNovaOrcamento(){
   renderProdPicker(); renderOrcItens(); renderResumo();
   openOv('ov-orcamento');
 }
-
 function onClienteChange(){
   const id=document.getElementById('orc-cliente-sel').value;
   const c=DB.clientes.find(x=>x.id===id);
@@ -922,69 +731,47 @@ function onClienteChange(){
   if(c) el.innerHTML=`<strong>${c.nome}</strong>${c.doc?'<br>'+c.doc:''}${c.tel?'<br>📞 '+c.tel:''}${c.email?'<br>✉️ '+c.email:''}`;
   else el.innerHTML='';
 }
-
 function renderProdPicker(){
   const q=(document.getElementById('prod-search').value||'').toLowerCase();
   const picker=document.getElementById('prod-picker');
-  const prods=DB.produtos.filter(p=>!q||p.nome.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q));
+  const prods=DB.produtos.filter(p=>!q||p.nome.toLowerCase().includes(q)||(p.sku||'').toLowerCase().includes(q));
   if(!prods.length){ picker.innerHTML='<p style="font-size:.78rem;color:var(--gray-400);padding:8px;">Nenhum produto encontrado.</p>'; return; }
-  picker.innerHTML=prods.map(p=>`
-    <div class="prod-pick-card" onclick="addItem('${p.id}')">
-      <div class="thumb">${p.foto?`<img src="${p.foto}" alt="">`:'📦'}</div>
-      <div class="pname">${p.nome}</div>
-      <div style="font-size:.68rem;color:var(--gray-400);">${p.sku||''}</div>
-      <div class="pprice">${fmt(p.preco)}/${p.unid}</div>
-    </div>`).join('');
+  picker.innerHTML=prods.map(p=>`<div class="prod-pick-card" onclick="addItem('${p.id}')"><div class="thumb">${p.foto?`<img src="${p.foto}" alt="">`:'📦'}</div><div class="pname">${p.nome}</div><div style="font-size:.68rem;color:var(--gray-400);">${p.sku||''}</div><div class="pprice">${fmt(p.preco)}/${p.unid}</div></div>`).join('');
 }
-
 function addItem(prodId){
   const p=DB.produtos.find(x=>x.id===prodId); if(!p) return;
   const ex=ORC.itens.find(x=>x.prodId===prodId);
-  if(ex) ex.qty++; else ORC.itens.push({ prodId, qty:1, precoTab:p.preco, descPct:0 });
+  if(ex) ex.qty++; else ORC.itens.push({prodId,qty:1,precoTab:p.preco,descPct:0});
   renderOrcItens(); renderResumo();
 }
 function removeItem(prodId){ ORC.itens=ORC.itens.filter(x=>x.prodId!==prodId); renderOrcItens(); renderResumo(); }
 function setQty(prodId,v){ const it=ORC.itens.find(x=>x.prodId===prodId); if(it){ it.qty=Math.max(1,parseInt(v)||1); renderResumo(); } }
 function setDesc(prodId,v){ const it=ORC.itens.find(x=>x.prodId===prodId); if(it){ it.descPct=Math.min(100,Math.max(0,parseFloat(v)||0)); renderResumo(); } }
-
 function renderOrcItens(){
   const wrap=document.getElementById('orc-items-wrap');
   document.getElementById('orc-item-count').textContent=ORC.itens.length+' itens';
   if(!ORC.itens.length){ wrap.innerHTML='<div class="empty-state" style="padding:20px;"><p>Selecione produtos acima.</p></div>'; return; }
   wrap.innerHTML=ORC.itens.map(it=>{
     const p=DB.produtos.find(x=>x.id===it.prodId)||{nome:'—',unid:'un',preco:0,sku:''};
-    const liq=it.precoTab*(1-it.descPct/100);
-    const sub=liq*it.qty;
+    const liq=it.precoTab*(1-it.descPct/100); const sub=liq*it.qty;
+    const pid=it.prodId;
     return `<div class="orc-item-row">
       <div class="product-thumb" style="width:34px;height:34px;font-size:.9rem;">${p.foto?`<img src="${p.foto}" alt="">`:'📦'}</div>
-      <div class="item-info">
-        <div class="item-name">${p.nome}</div>
-        <div class="item-code">${p.sku||''} · ${fmt(it.precoTab)}/${p.unid}</div>
-      </div>
+      <div class="item-info"><div class="item-name">${p.nome}</div><div class="item-code">${p.sku||''} · ${fmt(it.precoTab)}/${p.unid}</div></div>
       <div class="qty-wrap">
-        <button class="qty-btn" onclick="(function(){const it=ORC.itens.find(x=>x.prodId==='${it.prodId}');if(it&&it.qty>1){it.qty--;renderOrcItens();renderResumo();}})()">−</button>
-        <input class="qty-input" type="number" value="${it.qty}" min="1" onchange="setQty('${it.prodId}',this.value)" onblur="renderOrcItens()">
-        <button class="qty-btn" onclick="(function(){const it=ORC.itens.find(x=>x.prodId==='${it.prodId}');if(it){it.qty++;renderOrcItens();renderResumo();}})()">+</button>
+        <button class="qty-btn" onclick="(function(){var it=ORC.itens.find(function(x){return x.prodId==='${pid}'});if(it&&it.qty>1){it.qty--;renderOrcItens();renderResumo();}})()">−</button>
+        <input class="qty-input" type="number" value="${it.qty}" min="1" onchange="setQty('${pid}',this.value)" onblur="renderOrcItens()">
+        <button class="qty-btn" onclick="(function(){var it=ORC.itens.find(function(x){return x.prodId==='${pid}'});if(it){it.qty++;renderOrcItens();renderResumo();}})()">+</button>
       </div>
-      <div style="display:flex;align-items:center;gap:3px;">
-        <input class="disc-input" type="number" value="${it.descPct}" min="0" max="100" step="0.1" placeholder="0" onchange="setDesc('${it.prodId}',this.value);renderOrcItens()" title="Desconto %">
-        <span style="font-size:.7rem;color:var(--gray-400);">%</span>
-      </div>
+      <div style="display:flex;align-items:center;gap:3px;"><input class="disc-input" type="number" value="${it.descPct}" min="0" max="100" step="0.1" placeholder="0" onchange="setDesc('${pid}',this.value);renderOrcItens()" title="Desconto %"><span style="font-size:.7rem;color:var(--gray-400);">%</span></div>
       <div class="item-subtotal">${fmt(sub)}</div>
-      <button class="btn btn-ghost btn-sm btn-icon" onclick="removeItem('${it.prodId}')" title="Remover">✕</button>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="removeItem('${pid}')">✕</button>
     </div>`;
   }).join('');
 }
-
 function renderResumo(){
   let vtab=0,vliq=0,qtd=0,peso=0;
-  ORC.itens.forEach(it=>{
-    const p=DB.produtos.find(x=>x.id===it.prodId)||{preco:0,peso:0};
-    vtab+=it.precoTab*it.qty;
-    vliq+=it.precoTab*(1-it.descPct/100)*it.qty;
-    qtd+=it.qty;
-    peso+=p.peso*it.qty;
-  });
+  ORC.itens.forEach(it=>{ const p=DB.produtos.find(x=>x.id===it.prodId)||{preco:0,peso:0}; vtab+=it.precoTab*it.qty; vliq+=it.precoTab*(1-it.descPct/100)*it.qty; qtd+=it.qty; peso+=p.peso*it.qty; });
   const descMed=vtab>0?((vtab-vliq)/vtab*100):0;
   document.getElementById('rs-itens').textContent=ORC.itens.length;
   document.getElementById('rs-qtd').textContent=qtd;
@@ -993,7 +780,6 @@ function renderResumo(){
   document.getElementById('rs-desc').textContent=descMed.toFixed(4)+'%';
   document.getElementById('rs-total').textContent=fmt(vliq);
 }
-
 function salvarOrcamento(){
   const cliId=document.getElementById('orc-cliente-sel').value;
   if(!cliId){ alert('Selecione um cliente.'); return; }
@@ -1001,284 +787,154 @@ function salvarOrcamento(){
   const cli=DB.clientes.find(x=>x.id===cliId);
   let vtab=0,vliq=0,qtd=0;
   ORC.itens.forEach(it=>{ vtab+=it.precoTab*it.qty; vliq+=it.precoTab*(1-it.descPct/100)*it.qty; qtd+=it.qty; });
-  const orc={
-    id:ORC.id||uid(),
-    clienteId:cliId, clienteNome:cli.nome,
-    itens:JSON.parse(JSON.stringify(ORC.itens)),
-    data:document.getElementById('orc-data').value,
-    validade:document.getElementById('orc-validade').value,
-    cond:document.getElementById('orc-cond').value,
-    forma:document.getElementById('orc-forma').value,
-    frete:document.getElementById('orc-frete').value,
-    obs:document.getElementById('orc-obs').value,
-    vtab, vliq, qtd,
-    vendedor:DB.empresa.vendedor||'',
-    status:'Em orçamento'
-  };
+  const orc={id:ORC.id||uid(),clienteId:cliId,clienteNome:cli.nome,itens:JSON.parse(JSON.stringify(ORC.itens)),data:document.getElementById('orc-data').value,validade:document.getElementById('orc-validade').value,cond:document.getElementById('orc-cond').value,forma:document.getElementById('orc-forma').value,frete:document.getElementById('orc-frete').value,obs:document.getElementById('orc-obs').value,vtab,vliq,qtd,vendedor:DB.empresa.vendedor||'',status:'Em orçamento'};
   const idx=DB.orcamentos.findIndex(x=>x.id===orc.id);
   if(idx>=0) DB.orcamentos[idx]=orc; else DB.orcamentos.push(orc);
   save(); closeOv('ov-orcamento'); renderAll(); toast('✅ Cotação salva!');
   setTimeout(()=>verOrcamento(orc.id),300);
 }
-
 function verOrcamento(id){
   const orc=DB.orcamentos.find(x=>x.id===id); if(!orc) return;
   currentViewId=id;
   const num=String(DB.orcamentos.findIndex(x=>x.id===id)+1).padStart(6,'0');
-  document.getElementById('ver-title').textContent=`Cotação #${num} — ${orc.clienteNome}`;
+  document.getElementById('ver-title').textContent='Cotação #'+num+' — '+orc.clienteNome;
   document.getElementById('ver-body').innerHTML=buildOrcHTML(orc,false);
   openOv('ov-ver');
 }
-
 function excluirOrcamento(id){ if(!confirm('Excluir cotação?')) return; DB.orcamentos=DB.orcamentos.filter(x=>x.id!==id); save(); renderAll(); }
 
-// ═══════════════════════ HTML DO ORÇAMENTO ═══════════════════════
-function buildOrcHTML(orc, print){
+// ══════════ HTML DO ORÇAMENTO ══════════
+function buildOrcHTML(orc,print){
   const emp=DB.empresa;
   const cli=DB.clientes.find(x=>x.id===orc.clienteId)||{nome:orc.clienteNome};
   const num=String(DB.orcamentos.findIndex(x=>x.id===orc.id)+1).padStart(6,'0');
-  const bg=print?'#f8f8f8':'var(--gray-50)';
+  const bg=print?'#f5f5f5':'var(--gray-50)';
   const border=print?'#ddd':'var(--gray-200)';
   const primary=print?'#1a56db':'var(--primary)';
   const muted=print?'#6b7280':'var(--gray-500)';
+  const fs=print?'14px':'13px'; // maior no print
 
   const rows=orc.itens.map(it=>{
-    const p=DB.produtos.find(x=>x.id===it.prodId)||{nome:'Produto',unid:'PC',sku:''};
-    const liq=it.precoTab*(1-it.descPct/100);
-    const sub=liq*it.qty;
-    const descStr=it.descPct>0?`<span style="color:#dc2626;font-size:.75rem;">-${it.descPct}%</span>`:'—';
+    const p=DB.produtos.find(x=>x.id===it.prodId)||{nome:'Produto',unid:'PC',sku:'',foto:''};
+    const liq=it.precoTab*(1-it.descPct/100); const sub=liq*it.qty;
+    const descStr=it.descPct>0?`<span style="color:#dc2626;font-size:.8rem;">-${it.descPct}%</span>`:'—';
+    // Mostrar imagem do produto tanto no preview quanto no print
+    const imgHtml=p.foto?`<img src="${p.foto}" style="width:36px;height:36px;border-radius:5px;object-fit:cover;vertical-align:middle;margin-right:8px;border:1px solid #e5e7eb;">`:
+      `<span style="display:inline-block;width:36px;height:36px;background:#f3f4f6;border-radius:5px;text-align:center;line-height:36px;font-size:1rem;margin-right:8px;vertical-align:middle;">📦</span>`;
     return `<tr>
-      <td style="padding:9px 12px;">${p.foto&&!print?`<img src="${p.foto}" style="width:32px;height:32px;border-radius:4px;object-fit:cover;vertical-align:middle;margin-right:6px;">`:''}<span style="font-weight:500;">${p.nome}</span></td>
-      <td style="padding:9px 12px;font-size:.78rem;color:${muted};">${p.sku||'—'}</td>
-      <td style="padding:9px 12px;text-align:center;">${it.qty} ${p.unid}</td>
-      <td style="padding:9px 12px;text-align:right;">${fmt(it.precoTab)}</td>
-      <td style="padding:9px 12px;text-align:center;">${descStr}</td>
-      <td style="padding:9px 12px;text-align:right;font-weight:600;color:${primary};">${fmt(liq)}</td>
-      <td style="padding:9px 12px;text-align:right;font-weight:700;">${fmt(sub)}</td>
+      <td style="padding:10px 12px;vertical-align:middle;">${imgHtml}<span style="font-weight:500;font-size:${fs};">${p.nome}</span></td>
+      <td style="padding:10px 12px;font-size:.82rem;color:${muted};">${p.sku||'—'}</td>
+      <td style="padding:10px 12px;text-align:center;font-size:${fs};">${it.qty} ${p.unid}</td>
+      <td style="padding:10px 12px;text-align:right;font-size:${fs};">${fmt(it.precoTab)}</td>
+      <td style="padding:10px 12px;text-align:center;">${descStr}</td>
+      <td style="padding:10px 12px;text-align:right;font-weight:600;color:${primary};font-size:${fs};">${fmt(liq)}</td>
+      <td style="padding:10px 12px;text-align:right;font-weight:700;font-size:${fs};">${fmt(sub)}</td>
     </tr>`;
   }).join('');
 
   const descMed=orc.vtab>0?((orc.vtab-orc.vliq)/orc.vtab*100):0;
 
-  return `
-  <div style="font-family:'Plus Jakarta Sans',sans-serif;color:#1f2937;font-size:13px;">
-    <!-- CABEÇALHO -->
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid ${primary};">
-      <div>
-        ${emp.logo?`<img src="${emp.logo}" style="height:48px;object-fit:contain;margin-bottom:6px;display:block;">`:''}
-        <div style="font-size:1.1rem;font-weight:800;color:#111;">${emp.nome}</div>
-        ${emp.cnpj?`<div style="font-size:.72rem;color:${muted};">CNPJ: ${emp.cnpj}</div>`:''}
-        ${emp.end?`<div style="font-size:.72rem;color:${muted};">${emp.end}</div>`:''}
-        ${emp.tel?`<div style="font-size:.72rem;color:${muted};">📞 ${emp.tel}</div>`:''}
-        ${emp.email?`<div style="font-size:.72rem;color:${muted};">✉️ ${emp.email}</div>`:''}
-      </div>
-      <div style="text-align:right;">
-        <div style="font-size:1.3rem;font-weight:800;color:${primary};letter-spacing:-.02em;">ORÇAMENTO</div>
-        <div style="font-size:1rem;font-weight:700;color:#111;">#${num}</div>
-        <div style="font-size:.72rem;color:${muted};margin-top:4px;">Emissão: ${fmtD(orc.data)}</div>
-        <div style="font-size:.72rem;color:${muted};">Validade: ${fmtD(orc.validade)}</div>
-        <div style="margin-top:6px;"><span style="background:${primary};color:#fff;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700;">${orc.status}</span></div>
-      </div>
+  return `<div style="font-family:'Plus Jakarta Sans',sans-serif;color:#1f2937;font-size:${fs};">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid ${primary};">
+      <div>${emp.logo?`<img src="${emp.logo}" style="height:54px;object-fit:contain;margin-bottom:8px;display:block;">`:''}<div style="font-size:1.15rem;font-weight:800;color:#111;">${emp.nome}</div>${emp.cnpj?`<div style="font-size:.8rem;color:${muted};">CNPJ: ${emp.cnpj}</div>`:''}${emp.end?`<div style="font-size:.8rem;color:${muted};">${emp.end}</div>`:''}${emp.tel?`<div style="font-size:.8rem;color:${muted};">📞 ${emp.tel}</div>`:''}${emp.email?`<div style="font-size:.8rem;color:${muted};">✉️ ${emp.email}</div>`:''}</div>
+      <div style="text-align:right;"><div style="font-size:1.5rem;font-weight:800;color:${primary};">ORÇAMENTO</div><div style="font-size:1.1rem;font-weight:700;color:#111;">#${num}</div><div style="font-size:.82rem;color:${muted};margin-top:4px;">Emissão: ${fmtD(orc.data)}</div><div style="font-size:.82rem;color:${muted};">Validade: ${fmtD(orc.validade)}</div><div style="margin-top:8px;"><span style="background:${primary};color:#fff;padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:700;">${orc.status}</span></div></div>
     </div>
-
-    <!-- CLIENTE + REPRESENTADA -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
-      <div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:12px 14px;">
-        <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:${muted};margin-bottom:6px;">🏢 Cliente</div>
-        <div style="font-weight:700;font-size:.9rem;">${cli.nome}</div>
-        ${cli.doc?`<div style="font-size:.72rem;color:${muted};">CPF/CNPJ: ${cli.doc}</div>`:''}
-        ${cli.tel?`<div style="font-size:.72rem;color:${muted};">📞 ${cli.tel}</div>`:''}
-        ${cli.email?`<div style="font-size:.72rem;color:${muted};">✉️ ${cli.email}</div>`:''}
-        ${cli.end?`<div style="font-size:.72rem;color:${muted};">📍 ${cli.end}</div>`:''}
-      </div>
-      <div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:12px 14px;">
-        <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:${muted};margin-bottom:6px;">📋 Detalhes do Pedido</div>
-        <div style="font-size:.78rem;display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;">
-          <div style="color:${muted};">Vendedor</div><div style="font-weight:500;">${orc.vendedor||'—'}</div>
-          <div style="color:${muted};">Cond. pgto</div><div style="font-weight:500;">${orc.cond}</div>
-          <div style="color:${muted};">Forma pgto</div><div style="font-weight:500;">${orc.forma}</div>
-          <div style="color:${muted};">Frete</div><div style="font-weight:500;">${orc.frete}</div>
-        </div>
-      </div>
+      <div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:14px 16px;"><div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:${muted};margin-bottom:8px;">🏢 Cliente</div><div style="font-weight:700;font-size:1rem;">${cli.nome}</div>${cli.doc?`<div style="font-size:.82rem;color:${muted};">CPF/CNPJ: ${cli.doc}</div>`:''}${cli.tel?`<div style="font-size:.82rem;color:${muted};">📞 ${cli.tel}</div>`:''}${cli.email?`<div style="font-size:.82rem;color:${muted};">✉️ ${cli.email}</div>`:''}${cli.end?`<div style="font-size:.82rem;color:${muted};">📍 ${cli.end}</div>`:''}</div>
+      <div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:14px 16px;"><div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:${muted};margin-bottom:8px;">📋 Detalhes</div><div style="font-size:.85rem;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;"><span style="color:${muted};">Vendedor</span><span style="font-weight:600;">${orc.vendedor||'—'}</span><span style="color:${muted};">Cond. pgto</span><span style="font-weight:600;">${orc.cond}</span><span style="color:${muted};">Forma pgto</span><span style="font-weight:600;">${orc.forma}</span><span style="color:${muted};">Frete</span><span style="font-weight:600;">${orc.frete}</span></div></div>
     </div>
-
-    <!-- PRODUTOS -->
-    <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:.8rem;">
-      <thead>
-        <tr style="background:${primary};color:#fff;">
-          <th style="padding:9px 12px;text-align:left;font-size:.68rem;font-weight:700;text-transform:uppercase;">Produto</th>
-          <th style="padding:9px 12px;text-align:left;font-size:.68rem;font-weight:700;text-transform:uppercase;">Cód.</th>
-          <th style="padding:9px 12px;text-align:center;font-size:.68rem;font-weight:700;text-transform:uppercase;">Qtde</th>
-          <th style="padding:9px 12px;text-align:right;font-size:.68rem;font-weight:700;text-transform:uppercase;">Preço Tab.</th>
-          <th style="padding:9px 12px;text-align:center;font-size:.68rem;font-weight:700;text-transform:uppercase;">Desc.</th>
-          <th style="padding:9px 12px;text-align:right;font-size:.68rem;font-weight:700;text-transform:uppercase;">Preço Líq.</th>
-          <th style="padding:9px 12px;text-align:right;font-size:.68rem;font-weight:700;text-transform:uppercase;">Subtotal</th>
-        </tr>
-      </thead>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:${fs};">
+      <thead><tr style="background:${primary};color:#fff;">
+        <th style="padding:10px 12px;text-align:left;font-size:.75rem;font-weight:700;text-transform:uppercase;">Produto</th>
+        <th style="padding:10px 12px;text-align:left;font-size:.75rem;font-weight:700;text-transform:uppercase;">Cód.</th>
+        <th style="padding:10px 12px;text-align:center;font-size:.75rem;font-weight:700;text-transform:uppercase;">Qtde</th>
+        <th style="padding:10px 12px;text-align:right;font-size:.75rem;font-weight:700;text-transform:uppercase;">Preço Tab.</th>
+        <th style="padding:10px 12px;text-align:center;font-size:.75rem;font-weight:700;text-transform:uppercase;">Desc.</th>
+        <th style="padding:10px 12px;text-align:right;font-size:.75rem;font-weight:700;text-transform:uppercase;">Preço Líq.</th>
+        <th style="padding:10px 12px;text-align:right;font-size:.75rem;font-weight:700;text-transform:uppercase;">Subtotal</th>
+      </tr></thead>
       <tbody>${rows}</tbody>
-      <tfoot>
-        <tr style="background:${bg};">
-          <td colspan="3" style="padding:10px 12px;font-size:.75rem;color:${muted};">${orc.itens.length} itens · ${orc.qtd} unidades</td>
-          <td style="padding:10px 12px;text-align:right;font-size:.78rem;color:${muted};">${fmt(orc.vtab)}</td>
-          <td style="padding:10px 12px;text-align:center;font-size:.78rem;color:#dc2626;font-weight:600;">${descMed.toFixed(4)}%</td>
-          <td colspan="2" style="padding:10px 12px;text-align:right;font-weight:800;font-size:1rem;color:${primary};">TOTAL: ${fmt(orc.vliq)}</td>
-        </tr>
-      </tfoot>
+      <tfoot><tr style="background:${bg};"><td colspan="3" style="padding:10px 12px;font-size:.82rem;color:${muted};">${orc.itens.length} itens · ${orc.qtd} unidades</td><td style="padding:10px 12px;text-align:right;font-size:.85rem;color:${muted};">${fmt(orc.vtab)}</td><td style="padding:10px 12px;text-align:center;font-size:.85rem;color:#dc2626;font-weight:600;">${descMed.toFixed(4)}%</td><td colspan="2" style="padding:10px 12px;text-align:right;font-weight:800;font-size:1.1rem;color:${primary};">TOTAL: ${fmt(orc.vliq)}</td></tr></tfoot>
     </table>
-
-    ${orc.obs?`<div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:.78rem;color:${muted};"><strong style="color:#374151;display:block;margin-bottom:4px;">Observações:</strong>${orc.obs}</div>`:''}
-    ${emp.info?`<div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:.78rem;color:${muted};"><strong style="color:#374151;display:block;margin-bottom:4px;">* Informações:</strong>${emp.info}</div>`:''}
-
-    <div style="margin-top:20px;padding-top:12px;border-top:1px solid ${border};font-size:.7rem;color:${muted};text-align:center;">
-      ${emp.nome}${emp.cnpj?' · CNPJ: '+emp.cnpj:''} · Cotação gerada em ${new Date().toLocaleDateString('pt-BR')}
-    </div>
+    ${orc.obs?`<div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:.85rem;color:${muted};"><strong style="color:#374151;display:block;margin-bottom:4px;">Observações:</strong>${orc.obs}</div>`:''}
+    ${emp.info?`<div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:.85rem;color:${muted};"><strong style="color:#374151;display:block;margin-bottom:4px;">* Informações:</strong>${emp.info}</div>`:''}
+    <div style="margin-top:20px;padding-top:12px;border-top:1px solid ${border};font-size:.78rem;color:${muted};text-align:center;">${emp.nome}${emp.cnpj?' · CNPJ: '+emp.cnpj:''} · Cotação gerada em ${new Date().toLocaleDateString('pt-BR')}</div>
   </div>`;
 }
 
+// ══════════ IMPRIMIR ══════════
 function imprimirAtual(){
   const orc=DB.orcamentos.find(x=>x.id===currentViewId); if(!orc) return;
   const html=buildOrcHTML(orc,true);
-  const w=window.open('','_blank','width=900,height=700');
-  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Orçamento</title>
+  const w=window.open('','_blank','width=1000,height=800');
+  if(!w){ alert('Permita pop-ups para imprimir. Nas configurações do browser, permita pop-ups para este site.'); return; }
+  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Orçamento</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Plus Jakarta Sans',sans-serif;padding:32px;background:#fff;max-width:900px;margin:0 auto;}@media print{body{padding:20px;max-width:100%;}}</style>
-  </head><body>${html}<script>window.onload=()=>{setTimeout(()=>{window.print();},600);}<\/script></body></html>`);
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Plus Jakarta Sans',sans-serif;padding:32px;background:#fff;max-width:1000px;margin:0 auto;font-size:14px;}
+    img{max-width:100%;}
+    @media print{
+      body{padding:16px;max-width:100%;font-size:12px;}
+      @page{margin:12mm;}
+    }
+  </style>
+  </head><body>${html}<script>window.onload=function(){setTimeout(function(){window.print();},800);};<\/script></body></html>`);
   w.document.close();
 }
 
+// ══════════ WHATSAPP ══════════
 function compartilharWpp(){
   const orc=DB.orcamentos.find(x=>x.id===currentViewId); if(!orc) return;
   const num=String(DB.orcamentos.findIndex(x=>x.id===currentViewId)+1).padStart(6,'0');
   const cli=DB.clientes.find(x=>x.id===orc.clienteId)||{};
-  const linhas=orc.itens.map(it=>{ const p=DB.produtos.find(x=>x.id===it.prodId)||{nome:'—',unid:'PC'}; const liq=it.precoTab*(1-it.descPct/100); return `• ${p.nome} — ${it.qty} ${p.unid} x ${fmt(liq)} = ${fmt(liq*it.qty)}`; }).join('\n');
-  const msg=`*ORÇAMENTO #${num}*\n*${DB.empresa.nome}*\n\nOlá${cli.nome?' '+cli.nome.split(' ')[0]:''}! Segue sua cotação:\n\n${linhas}\n\n*TOTAL: ${fmt(orc.vliq)}*\n\nValidade: ${fmtD(orc.validade)}\nCond. pgto: ${orc.cond}\n\n${orc.obs?'Obs: '+orc.obs+'\n\n':''}${DB.empresa.tel?'📞 '+DB.empresa.tel:''}`;
+  const linhas=orc.itens.map(it=>{ const p=DB.produtos.find(x=>x.id===it.prodId)||{nome:'—',unid:'PC'}; const liq=it.precoTab*(1-it.descPct/100); return '• '+p.nome+' — '+it.qty+' '+p.unid+' x '+fmt(liq)+' = '+fmt(liq*it.qty); }).join('\n');
+  const msg='*ORÇAMENTO #'+num+'*\n*'+DB.empresa.nome+'*\n\nOlá'+(cli.nome?' '+cli.nome.split(' ')[0]:'')+', segue sua cotação:\n\n'+linhas+'\n\n*TOTAL: '+fmt(orc.vliq)+'*\n\nValidade: '+fmtD(orc.validade)+'\nCond. pgto: '+orc.cond+'\nFrete: '+orc.frete+(orc.obs?'\n\nObs: '+orc.obs:'')+(DB.empresa.tel?'\n\n📞 '+DB.empresa.tel:'');
   const tel=(cli.tel||'').replace(/\D/g,'');
-  const url=`https://wa.me/${tel?'55'+tel:''}?text=${encodeURIComponent(msg)}`;
-  window.open(url,'_blank');
+  window.open('https://wa.me/'+(tel?'55'+tel:'')+'?text='+encodeURIComponent(msg),'_blank');
 }
 
+// ══════════ EMAIL ══════════
+// O botão email usa mailto: que abre o app de email configurado no dispositivo.
+// No desktop: abre Outlook, Thunderbird, ou Gmail se configurado como padrão.
+// No mobile: abre o app de email nativo.
+// Para envio automático sem app de email, configure o EmailJS abaixo.
 function enviarEmail(){
   const orc=DB.orcamentos.find(x=>x.id===currentViewId); if(!orc) return;
   const num=String(DB.orcamentos.findIndex(x=>x.id===currentViewId)+1).padStart(6,'0');
   const cli=DB.clientes.find(x=>x.id===orc.clienteId)||{};
-  const subject=`Orçamento #${num} — ${DB.empresa.nome}`;
-  const linhas=orc.itens.map(it=>{ const p=DB.produtos.find(x=>x.id===it.prodId)||{nome:'—',unid:'PC'}; const liq=it.precoTab*(1-it.descPct/100); return `${p.nome} — ${it.qty} ${p.unid} x ${fmt(liq)} = ${fmt(liq*it.qty)}`; }).join('\n');
-  const body=`Prezado(a) ${cli.nome||'Cliente'},\n\nSegue abaixo o orçamento solicitado:\n\n${linhas}\n\nTOTAL: ${fmt(orc.vliq)}\nValidade: ${fmtD(orc.validade)}\nCond. pagamento: ${orc.cond}\nFrete: ${orc.frete}\n\n${orc.obs?'Observações: '+orc.obs+'\n\n':''}${DB.empresa.info?DB.empresa.info+'\n\n':''}Atenciosamente,\n${DB.empresa.vendedor||DB.empresa.nome}\n${DB.empresa.tel||''}\n${DB.empresa.email||''}`;
-  window.location.href=`mailto:${cli.email||''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const subject='Orçamento #'+num+' — '+DB.empresa.nome;
+  const linhas=orc.itens.map(it=>{ const p=DB.produtos.find(x=>x.id===it.prodId)||{nome:'—',unid:'PC'}; const liq=it.precoTab*(1-it.descPct/100); return p.nome+' — '+it.qty+' '+p.unid+' x '+fmt(liq)+' = '+fmt(liq*it.qty); }).join('\n');
+  const body='Prezado(a) '+(cli.nome||'Cliente')+',\n\nSegue abaixo o orçamento solicitado:\n\n'+linhas+'\n\nTOTAL: '+fmt(orc.vliq)+'\nValidade: '+fmtD(orc.validade)+'\nCond. pagamento: '+orc.cond+'\nFrete: '+orc.frete+(orc.obs?'\n\nObservações: '+orc.obs:'')+'\n\nAtenciosamente,\n'+(DB.empresa.vendedor||DB.empresa.nome)+(DB.empresa.tel?'\n'+DB.empresa.tel:'')+(DB.empresa.email?'\n'+DB.empresa.email:'');
+  window.location.href='mailto:'+(cli.email||'')+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
 }
 
-// ═══════════════════════ RENDER ORÇAMENTOS ═══════════════════════
+// ══════════ RENDER ORÇAMENTOS ══════════
 function renderOrcamentos(){
   const tbody=document.getElementById('orc-tbody');
   document.getElementById('orc-count-label').textContent=DB.orcamentos.length+' cotações';
   document.getElementById('nb-orc').textContent=DB.orcamentos.length;
   if(!DB.orcamentos.length){ tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="eicon">📄</div><p>Nenhuma cotação gerada ainda.</p></div></td></tr>'; return; }
   const sorted=[...DB.orcamentos].sort((a,b)=>b.id.localeCompare(a.id));
-  tbody.innerHTML=sorted.map((o,i)=>{
-    const num=String(DB.orcamentos.findIndex(x=>x.id===o.id)+1).padStart(6,'0');
-    return `<tr>
-      <td style="font-weight:700;color:var(--primary);">#${num}</td>
-      <td><div style="font-weight:600;">${o.clienteNome}</div></td>
-      <td style="font-size:.78rem;color:var(--gray-500);">${fmtD(o.data)}</td>
-      <td style="font-size:.78rem;color:var(--gray-500);">${fmtD(o.validade)}</td>
-      <td style="text-align:center;">${o.itens.length}</td>
-      <td style="font-weight:700;">${fmt(o.vliq)}</td>
-      <td><span class="badge badge-blue">${o.status}</span></td>
-      <td style="text-align:right;white-space:nowrap;">
-        <button class="btn btn-outline btn-sm" onclick="verOrcamento('${o.id}')">👁️ Ver</button>
-        <button class="btn btn-ghost btn-sm btn-icon" onclick="excluirOrcamento('${o.id}')" title="Excluir">🗑️</button>
-      </td>
-    </tr>`;
-  }).join('');
+  tbody.innerHTML=sorted.map(o=>{ const num=String(DB.orcamentos.findIndex(x=>x.id===o.id)+1).padStart(6,'0'); return `<tr><td style="font-weight:700;color:var(--primary);">#${num}</td><td><div style="font-weight:600;">${o.clienteNome}</div></td><td style="font-size:.78rem;color:var(--gray-500);">${fmtD(o.data)}</td><td style="font-size:.78rem;color:var(--gray-500);">${fmtD(o.validade)}</td><td style="text-align:center;">${o.itens.length}</td><td style="font-weight:700;">${fmt(o.vliq)}</td><td><span class="badge badge-blue">${o.status}</span></td><td style="text-align:right;white-space:nowrap;"><button class="btn btn-outline btn-sm" onclick="verOrcamento('${o.id}')">👁️ Ver</button><button class="btn btn-ghost btn-sm btn-icon" onclick="excluirOrcamento('${o.id}')">🗑️</button></td></tr>`; }).join('');
 }
 
-// ═══════════════════════ DASHBOARD ═══════════════════════
+// ══════════ DASHBOARD ══════════
 function renderDashboard(){
   document.getElementById('st-orc').textContent=DB.orcamentos.length;
   document.getElementById('st-cli').textContent=DB.clientes.length;
   document.getElementById('st-prod').textContent=DB.produtos.length;
-  const total=DB.orcamentos.reduce((s,o)=>s+o.vliq,0);
-  document.getElementById('st-total').textContent=fmt(total);
+  document.getElementById('st-total').textContent=fmt(DB.orcamentos.reduce((s,o)=>s+o.vliq,0));
   const sorted=[...DB.orcamentos].sort((a,b)=>b.id.localeCompare(a.id)).slice(0,5);
   const tbody=document.getElementById('dash-table');
   if(!sorted.length){ tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="eicon">📄</div><p>Nenhuma cotação ainda.</p></div></td></tr>'; return; }
-  tbody.innerHTML=sorted.map(o=>{
-    const num=String(DB.orcamentos.findIndex(x=>x.id===o.id)+1).padStart(6,'0');
-    return `<tr>
-      <td style="font-weight:700;color:var(--primary);">#${num}</td>
-      <td>${o.clienteNome}</td>
-      <td style="font-size:.78rem;color:var(--gray-500);">${fmtD(o.data)}</td>
-      <td style="text-align:center;">${o.itens.length}</td>
-      <td style="font-weight:700;">${fmt(o.vliq)}</td>
-      <td><span class="badge badge-blue">${o.status}</span></td>
-      <td><button class="btn btn-ghost btn-sm" onclick="verOrcamento('${o.id}')">Ver</button></td>
-    </tr>`;
-  }).join('');
+  tbody.innerHTML=sorted.map(o=>{ const num=String(DB.orcamentos.findIndex(x=>x.id===o.id)+1).padStart(6,'0'); return `<tr><td style="font-weight:700;color:var(--primary);">#${num}</td><td>${o.clienteNome}</td><td style="font-size:.78rem;color:var(--gray-500);">${fmtD(o.data)}</td><td style="text-align:center;">${o.itens.length}</td><td style="font-weight:700;">${fmt(o.vliq)}</td><td><span class="badge badge-blue">${o.status}</span></td><td><button class="btn btn-ghost btn-sm" onclick="verOrcamento('${o.id}')">Ver</button></td></tr>`; }).join('');
 }
 
-// ═══════════════════════ RENDER ALL ═══════════════════════
+// ══════════ RENDER ALL ══════════
 function renderAll(){
-  renderDashboard();
-  renderClientes();
-  renderProdutos();
-  renderOrcamentos();
-  loadEmpresaForm();
-  document.getElementById('sb-brand').textContent=DB.empresa.nome||'OrçaPro';
-  document.getElementById('sb-vendedor').textContent=DB.empresa.vendedor||'Vendedor';
-  document.getElementById('sb-avatar').textContent=(DB.empresa.vendedor||DB.empresa.nome||'V')[0].toUpperCase();
+  renderDashboard(); renderClientes(); renderProdutos(); renderOrcamentos();
 }
-
-// ═══════════════════════ BOTTOM NAV SYNC ═══════════════════════
-const _goTo_orig = goTo;
-function goTo(page, navEl){
-  currentPage = page;
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  if(navEl) navEl.classList.add('active');
-  else { const n=document.querySelector('[data-page="'+page+'"]'); if(n) n.classList.add('active'); }
-  document.getElementById('topbar-title').textContent = TITLES[page]||page;
-  const btn=document.getElementById('topbar-btn');
-  if(BTN_MAP[page]){ btn.style.display='inline-flex'; btn.innerHTML='<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'+BTN_MAP[page]; }
-  else btn.style.display='none';
-  ['dashboard','clientes','produtos','orcamentos'].forEach(p=>{
-    const el=document.getElementById('bn-'+p);
-    if(el) el.classList.toggle('active', p===page);
-  });
-  renderAll();
-}
-
-renderAll();
 </script>
-
-<!-- BOTTOM NAV MOBILE -->
-<div class="bottom-nav">
-  <div class="bottom-nav-inner">
-    <button class="bn-item active" id="bn-dashboard" onclick="goTo('dashboard',null)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      Início
-    </button>
-    <button class="bn-item" id="bn-clientes" onclick="goTo('clientes',null)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Clientes
-    </button>
-    <button class="bn-fab" onclick="abrirNovaOrcamento()" title="Nova Cotação">
-      <div class="bn-fab-inner">
-        <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </div>
-    </button>
-    <button class="bn-item" id="bn-produtos" onclick="goTo('produtos',null)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-      Produtos
-    </button>
-    <button class="bn-item" id="bn-orcamentos" onclick="goTo('orcamentos',null)">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
-      Cotações
-    </button>
-  </div>
-</div>
-
-<div id="toast" style="position:fixed;bottom:80px;right:16px;background:#1f2937;color:#fff;padding:10px 18px;border-radius:8px;font-size:.82rem;font-weight:500;box-shadow:0 10px 15px rgba(0,0,0,0.1);display:none;z-index:999;transition:opacity .3s;">Salvo!</div>
-
 </body>
 </html>
