@@ -977,5 +977,22 @@ async function salvarSupabase() {
 
 <button onclick="salvarSupabase()">Salvar no banco</button>
 
+<script>
+document.addEventListener('click', function(e) {
+  const texto = e.target.innerText || '';
+
+  if (texto.includes('Salvar')) {
+
+    supabase.from('cotacoes').insert([
+      {
+        produto: 'COTAÇÃO AUTOMÁTICA',
+        valor: 999
+      }
+    ]);
+
+    console.log('Tentou salvar no Supabase');
+  }
+});
+</script>
 </body>
 </html>
