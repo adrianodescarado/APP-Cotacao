@@ -789,7 +789,7 @@ function salvarOrcamento(){
   ORC.itens.forEach(it=>{ vtab+=it.precoTab*it.qty; vliq+=it.precoTab*(1-it.descPct/100)*it.qty; qtd+=it.qty; });
   const orc={id:ORC.id||uid(),clienteId:cliId,clienteNome:cli.nome,itens:JSON.parse(JSON.stringify(ORC.itens)),data:document.getElementById('orc-data').value,validade:document.getElementById('orc-validade').value,cond:document.getElementById('orc-cond').value,forma:document.getElementById('orc-forma').value,frete:document.getElementById('orc-frete').value,obs:document.getElementById('orc-obs').value,vtab,vliq,qtd,vendedor:DB.empresa.vendedor||'',status:'Em orçamento'};
   const idx=DB.orcamentos.findIndex(x=>x.id===orc.id);
-  if(idx>=0) DB.orcamentos[idx]=orc; else DB.orcamentos.push(orc); supabase.from('cotacoes').insert([
+  if(idx>=0) DB.orcamentos[idx]=orc; else DB.orcamentos.push(orc); supabaseClient.from(...)('cotacoes').insert([
   {
     produto: 'COTAÇÃO',
     valor: 999
