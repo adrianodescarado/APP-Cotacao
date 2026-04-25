@@ -945,11 +945,10 @@ function renderAll(){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-const supabase = window.supabase.createClient(
+const supabaseClient = window.supabase.createClient(
   "https://wctvbkusaajjfosaiibl.supabase.co",
   "sb_publishable_qqa8Ely5r6qvLlc-3KiqNw_bPUuBYOs"
 );
-
 async function salvarSupabase() {
   try {
     const { data, error } = await supabase
