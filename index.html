@@ -982,7 +982,7 @@ document.addEventListener('click', function(e) {
 
   if (texto.includes('Salvar')) {
 
-    supabase.from('cotacoes').insert([
+    supabaseClient.from('cotacoes').insert([
       {
         produto: 'COTAÇÃO AUTOMÁTICA',
         valor: 999
