@@ -1003,7 +1003,29 @@ const supabaseClient = window.supabase.createClient(
 <script>
 function salvarSupabase() {
   supabaseClient.from('cotacoes').insert([
-    { produto: 'TESTE NOVO', valor: 777 }
+    <script>
+function salvarSupabase() {
+
+  // pega valor total da sua cotação
+  const total = DB.orcamentos.reduce((s,o)=>s+o.vliq,0);
+
+  // pega nome de exemplo (depois melhoramos)
+  const nome = "COTAÇÃO REAL";
+
+  supabaseClient.from('cotacoes').insert([
+    { produto: nome, valor: total }
+  ])
+  .then(res => {
+    console.log(res);
+    alert('SALVOU NO BANCO!');
+  })
+  .catch(err => {
+    console.log(err);
+    alert('ERRO AO SALVAR');
+  });
+
+}
+</script>
   ])
   .then(res => console.log(res))
   .catch(err => console.log(err));
