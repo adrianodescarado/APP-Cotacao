@@ -498,3 +498,586 @@
         .stat-item {
             display: flex;
             justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0, 217, 255, 0.2);
+            color: #00d9ff;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-size: 13px;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #b700ff;
+        }
+
+        @media (max-width: 1024px) {
+            .editor-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar, .properties-panel {
+                display: none;
+            }
+
+            .viewer-container {
+                grid-template-columns: 1fr;
+            }
+
+            .chat-window {
+                height: 400px;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #00d9ff;
+        }
+
+        .empty-state h2 {
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: rgba(0, 217, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐍 Mandrake - Sistema de Automação de Conversas</h1>
+            <p>Crie fluxos de conversas interativas com editor visual</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('editor')">📝 Editor de Fluxos</button>
+            <button class="tab-btn" onclick="switchTab('viewer')">💬 Visualizador</button>
+            <button class="tab-btn" onclick="switchTab('export')">📤 Exportar/Importar</button>
+        </div>
+
+        <!-- EDITOR TAB -->
+        <div id="editor" class="tab-content active">
+            <div class="editor-container">
+                <!-- Sidebar -->
+                <div class="sidebar">
+                    <h3>Tipos de Nós</h3>
+                    <div class="node-template" draggable="true" ondragstart="startDrag(event, 'message')">
+                        💬 Mensagem
+                    </div>
+                    <div class="node-template" draggable="true" ondragstart="startDrag(event, 'question')">
+                        ❓ Pergunta
+                    </div>
+                    <div class="node-template" draggable="true" ondragstart="startDrag(event, 'response')">
+                        ✅ Resposta
+                    </div>
+                    <div class="node-template" draggable="true" ondragstart="startDrag(event, 'image')">
+                        🖼️ Imagem
+                    </div>
+                    <div class="node-template" draggable="true" ondragstart="startDrag(event, 'video')">
+                        🎥 Vídeo
+                    </div>
+                    <div class="node-template" draggable="true" ondragstart="startDrag(event, 'link')">
+                        🔗 Link
+                    </div>
+                </div>
+
+                <!-- Canvas -->
+                <div class="canvas" id="canvas" ondrop="dropNode(event)" ondragover="allowDrop(event)">
+                    <div class="canvas-grid" id="nodes-container">
+                        <div class="empty-state">
+                            <h2>Arraste nós aqui para começar</h2>
+                            <p>Selecione um tipo de nó à esquerda e arraste para o canvas</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Properties Panel -->
+                <div class="properties-panel">
+                    <h3>Propriedades</h3>
+                    <div id="properties" style="color: #00d9ff; font-size: 13px;">
+                        Selecione um nó para editar
+                    </div>
+                    <div class="button-group" style="margin-top: 30px;">
+                        <button class="btn btn-primary" onclick="saveFlow()">💾 Salvar Fluxo</button>
+                        <button class="btn btn-secondary" onclick="loadFlow()">📂 Carregar</button>
+                        <button class="btn btn-danger" onclick="clearCanvas()">🗑️ Limpar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEWER TAB -->
+        <div id="viewer" class="tab-content">
+            <div class="viewer-container">
+                <div class="chat-window">
+                    <div class="chat-header">
+                        <span id="chat-title">Mandrake Chat</span>
+                        <span id="chat-status">●</span>
+                    </div>
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message bot">
+                            <div class="message-bubble">Olá! Bem-vindo ao Mandrake. Comece criando um fluxo no editor.</div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" class="chat-input" id="chat-input" placeholder="Digite sua mensagem..." onkeypress="handleChatInput(event)">
+                        <button class="chat-send" onclick="sendMessage()">→</button>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="theme-selector">
+                        <h3>Temas</h3>
+                        <div class="theme-option active" onclick="setTheme('whatsapp')">🟢 WhatsApp</div>
+                        <div class="theme-option" onclick="setTheme('telegram')">🔵 Telegram</div>
+                        <div class="theme-option" onclick="setTheme('instagram')">💜 Instagram</div>
+                        <div class="theme-option" onclick="setTheme('cyberpunk')">⚡ Cyberpunk</div>
+                    </div>
+
+                    <div class="stats">
+                        <h3>Estatísticas</h3>
+                        <div class="stat-item">
+                            <span class="stat-label">Total de Nós</span>
+                            <span class="stat-value" id="stat-nodes">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Mensagens Enviadas</span>
+                            <span class="stat-value" id="stat-messages">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Conversas Ativas</span>
+                            <span class="stat-value" id="stat-conversations">1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXPORT TAB -->
+        <div id="export" class="tab-content">
+            <div style="background: rgba(26, 31, 58, 0.8); border: 2px solid #b700ff; border-radius: 8px; padding: 30px;">
+                <h2 style="color: #00d9ff; margin-bottom: 20px;">Exportar e Importar Fluxos</h2>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="color: #b700ff; margin-bottom: 15px;">📤 Exportar</h3>
+                        <p style="margin-bottom: 15px; color: #00d9ff;">Baixe seu fluxo como arquivo JSON:</p>
+                        <button class="btn btn-primary" onclick="exportFlow()">Exportar como JSON</button>
+                    </div>
+
+                    <div>
+                        <h3 style="color: #b700ff; margin-bottom: 15px;">📥 Importar</h3>
+                        <p style="margin-bottom: 15px; color: #00d9ff;">Carregue um arquivo JSON:</p>
+                        <input type="file" id="import-file" accept=".json" style="margin-bottom: 10px;">
+                        <button class="btn btn-primary" onclick="importFlow()">Importar JSON</button>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px; padding: 20px; background: rgba(0, 217, 255, 0.1); border-left: 4px solid #00d9ff; border-radius: 4px;">
+                    <h3 style="color: #00d9ff; margin-bottom: 10px;">📋 Formato do JSON</h3>
+                    <pre style="color: #b700ff; font-size: 12px; overflow-x: auto;"><code>{
+  "nodes": [
+    {
+      "id": "node-1",
+      "type": "message",
+      "x": 100,
+      "y": 100,
+      "content": "Olá!",
+      "metadata": {}
+    }
+  ],
+  "edges": [
+    {
+      "from": "node-1",
+      "to": "node-2"
+    }
+  ]
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let nodes = [];
+        let edges = [];
+        let selectedNode = null;
+        let currentTheme = 'whatsapp';
+        let messageCount = 0;
+        let draggedNodeType = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStats();
+            loadFlowFromStorage();
+        });
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Drag and drop
+        function startDrag(e, nodeType) {
+            draggedNodeType = nodeType;
+            e.dataTransfer.effectAllowed = 'copy';
+        }
+
+        function allowDrop(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+        }
+
+        function dropNode(e) {
+            e.preventDefault();
+            if (!draggedNodeType) return;
+
+            const canvas = document.getElementById('canvas');
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            createNode(draggedNodeType, x, y);
+            draggedNodeType = null;
+        }
+
+        // Node management
+        function createNode(type, x, y) {
+            const id = 'node-' + Date.now();
+            const node = {
+                id,
+                type,
+                x: Math.max(0, x - 100),
+                y: Math.max(0, y - 30),
+                content: getDefaultContent(type),
+                metadata: {}
+            };
+
+            nodes.push(node);
+            renderNode(node);
+            updateStats();
+            clearEmptyState();
+        }
+
+        function getDefaultContent(type) {
+            const defaults = {
+                message: 'Nova mensagem',
+                question: 'Qual é sua resposta?',
+                response: 'Obrigado!',
+                image: 'https://via.placeholder.com/300',
+                video: 'https://youtube.com/watch?v=...',
+                link: 'https://exemplo.com'
+            };
+            return defaults[type] || 'Novo nó';
+        }
+
+        function renderNode(node ) {
+            const container = document.getElementById('nodes-container');
+            const nodeEl = document.createElement('div');
+            nodeEl.className = 'node';
+            nodeEl.id = node.id;
+            nodeEl.style.left = node.x + 'px';
+            nodeEl.style.top = node.y + 'px';
+
+            const typeIcons = {
+                message: '💬',
+                question: '❓',
+                response: '✅',
+                image: '🖼️',
+                video: '🎥',
+                link: '🔗'
+            };
+
+            nodeEl.innerHTML = `
+                <div class="node-header">
+                    <span class="node-type">${typeIcons[node.type]} ${node.type.toUpperCase()}</span>
+                    <button class="node-delete" onclick="deleteNode('${node.id}')">✕</button>
+                </div>
+                <div class="node-content">
+                    <textarea class="node-input" placeholder="Conteúdo..." onchange="updateNodeContent('${node.id}', this.value)" onclick="selectNode('${node.id}')">${node.content}</textarea>
+                </div>
+                <div class="node-handles">
+                    <div class="handle" title="Entrada"></div>
+                    <div class="handle" title="Saída"></div>
+                </div>
+            `;
+
+            nodeEl.addEventListener('mousedown', (e) => {
+                if (e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') {
+                    dragNode(e, node.id);
+                }
+            });
+
+            nodeEl.addEventListener('click', () => selectNode(node.id));
+
+            container.appendChild(nodeEl);
+        }
+
+        function selectNode(nodeId) {
+            selectedNode = nodeId;
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
+            document.getElementById(nodeId).classList.add('selected');
+
+            const node = nodes.find(n => n.id === nodeId);
+            updatePropertiesPanel(node);
+        }
+
+        function updateNodeContent(nodeId, content) {
+            const node = nodes.find(n => n.id === nodeId);
+            if (node) {
+                node.content = content;
+            }
+        }
+
+        function deleteNode(nodeId) {
+            nodes = nodes.filter(n => n.id !== nodeId);
+            edges = edges.filter(e => e.from !== nodeId && e.to !== nodeId);
+            document.getElementById(nodeId).remove();
+            updateStats();
+            if (selectedNode === nodeId) {
+                selectedNode = null;
+                document.getElementById('properties').innerHTML = 'Selecione um nó para editar';
+            }
+        }
+
+        function dragNode(e, nodeId) {
+            const node = nodes.find(n => n.id === nodeId);
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const startNodeX = node.x;
+            const startNodeY = node.y;
+
+            function onMouseMove(moveEvent) {
+                const deltaX = moveEvent.clientX - startX;
+                const deltaY = moveEvent.clientY - startY;
+                node.x = Math.max(0, startNodeX + deltaX);
+                node.y = Math.max(0, startNodeY + deltaY);
+                document.getElementById(nodeId).style.left = node.x + 'px';
+                document.getElementById(nodeId).style.top = node.y + 'px';
+            }
+
+            function onMouseUp() {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        }
+
+        function updatePropertiesPanel(node) {
+            const panel = document.getElementById('properties');
+            panel.innerHTML = `
+                <div class="property-group">
+                    <label class="property-label">ID do Nó</label>
+                    <input type="text" class="property-input" value="${node.id}" readonly>
+                </div>
+                <div class="property-group">
+                    <label class="property-label">Tipo</label>
+                    <input type="text" class="property-input" value="${node.type}" readonly>
+                </div>
+                <div class="property-group">
+                    <label class="property-label">Conteúdo</label>
+                    <textarea class="property-input" style="min-height: 100px;" onchange="updateNodeContent('${node.id}', this.value)">${node.content}</textarea>
+                </div>
+                <div class="property-group">
+                    <label class="property-label">Posição X</label>
+                    <input type="number" class="property-input" value="${node.x}" onchange="node.x = parseInt(this.value); document.getElementById('${node.id}').style.left = this.value + 'px';">
+                </div>
+                <div class="property-group">
+                    <label class="property-label">Posição Y</label>
+                    <input type="number" class="property-input" value="${node.y}" onchange="node.y = parseInt(this.value); document.getElementById('${node.id}').style.top = this.value + 'px';">
+                </div>
+            `;
+        }
+
+        // Storage
+        function saveFlow() {
+            const flowData = {
+                nodes,
+                edges,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem('mandrake-flow', JSON.stringify(flowData));
+            alert('✅ Fluxo salvo com sucesso!');
+        }
+
+        function loadFlow() {
+            const data = localStorage.getItem('mandrake-flow');
+            if (data) {
+                const flowData = JSON.parse(data);
+                nodes = flowData.nodes || [];
+                edges = flowData.edges || [];
+                renderCanvas();
+                alert('✅ Fluxo carregado!');
+            } else {
+                alert('❌ Nenhum fluxo salvo encontrado');
+            }
+        }
+
+        function loadFlowFromStorage() {
+            const data = localStorage.getItem('mandrake-flow');
+            if (data) {
+                const flowData = JSON.parse(data);
+                nodes = flowData.nodes || [];
+                edges = flowData.edges || [];
+                renderCanvas();
+            }
+        }
+
+        function renderCanvas() {
+            const container = document.getElementById('nodes-container');
+            container.innerHTML = '';
+            if (nodes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h2>Arraste nós aqui para começar</h2>
+                        <p>Selecione um tipo de nó à esquerda e arraste para o canvas</p>
+                    </div>
+                `;
+            } else {
+                nodes.forEach(node => renderNode(node));
+            }
+        }
+
+        function clearCanvas() {
+            if (confirm('Tem certeza? Isso vai limpar todos os nós.')) {
+                nodes = [];
+                edges = [];
+                selectedNode = null;
+                renderCanvas();
+                updateStats();
+            }
+        }
+
+        function clearEmptyState() {
+            const empty = document.querySelector('.empty-state');
+            if (empty) empty.remove();
+        }
+
+        // Export/Import
+        function exportFlow() {
+            const flowData = {
+                nodes,
+                edges,
+                timestamp: new Date().toISOString(),
+                version: '1.0'
+            };
+            const dataStr = JSON.stringify(flowData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `mandrake-flow-${Date.now()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importFlow() {
+            const fileInput = document.getElementById('import-file');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Selecione um arquivo JSON');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const flowData = JSON.parse(e.target.result);
+                    nodes = flowData.nodes || [];
+                    edges = flowData.edges || [];
+                    renderCanvas();
+                    updateStats();
+                    alert('✅ Fluxo importado com sucesso!');
+                } catch (err) {
+                    alert('❌ Erro ao importar: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Chat viewer
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addChatMessage(message, 'user');
+            input.value = '';
+            messageCount++;
+            updateStats();
+
+            // Simulate bot response
+            setTimeout(() => {
+                const responses = [
+                    'Entendi! 👍',
+                    'Ótimo! Próximo passo?',
+                    'Perfeito! 🎉',
+                    'Claro! Como posso ajudar?',
+                    'Entendido!'
+                ];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addChatMessage(randomResponse, 'bot');
+            }, 500);
+        }
+
+        function handleChatInput(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function addChatMessage(text, sender) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.innerHTML = `<div class="message-bubble">${text}</div>`;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function setTheme(theme) {
+            currentTheme = theme;
+            document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const themes = {
+                whatsapp: { header: 'linear-gradient(135deg, #25d366, #128c7e)', bg: '#ece5dd' },
+                telegram: { header: 'linear-gradient(135deg, #0088cc, #005a96)', bg: '#f5f5f5' },
+                instagram: { header: 'linear-gradient(135deg, #833ab4, #fd1d1d)', bg: '#fafafa' },
+                cyberpunk: { header: 'linear-gradient(135deg, #00d9ff, #b700ff)', bg: '#0a0e27' }
+            };
+
+            const themeData = themes[theme];
+            const chatHeader = document.querySelector('.chat-header');
+            const chatMessages = document.querySelector('.chat-messages');
+            chatHeader.style.background = themeData.header;
+            chatMessages.style.background = themeData.bg;
+        }
+
+        function updateStats() {
+            document.getElementById('stat-nodes').textContent = nodes.length;
+            document.getElementById('stat-messages').textContent = messageCount;
+        }
+    </script>
+</body>
+</html>
