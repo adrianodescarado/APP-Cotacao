@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mandrake - Sistema de Automação de Conversas</title>
+    <title>Mandrake v2 - Sistema de Automação de Conversas</title>
     <style>
         * {
             margin: 0;
@@ -36,6 +36,7 @@
             color: #00d9ff;
             font-size: 28px;
             margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
         }
 
         header p {
@@ -79,7 +80,6 @@
             display: block;
         }
 
-        /* EDITOR SECTION */
         .editor-container {
             display: grid;
             grid-template-columns: 250px 1fr 300px;
@@ -93,6 +93,7 @@
             border-radius: 8px;
             padding: 20px;
             overflow-y: auto;
+            max-height: 600px;
         }
 
         .sidebar h3 {
@@ -119,27 +120,42 @@
             transform: scale(1.05);
         }
 
-        .node-template:active {
-            cursor: grabbing;
-        }
-
-        .canvas {
+        .canvas-wrapper {
+            position: relative;
             background: rgba(10, 14, 39, 0.6);
             border: 2px solid #00d9ff;
             border-radius: 8px;
-            padding: 20px;
-            position: relative;
-            overflow: auto;
+            overflow: hidden;
             min-height: 600px;
         }
 
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
         .canvas-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background-image:
                 linear-gradient(rgba(0, 217, 255, 0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(0, 217, 255, 0.05) 1px, transparent 1px);
             background-size: 20px 20px;
-            min-height: 100%;
-            position: relative;
+            pointer-events: none;
+        }
+
+        .nodes-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
 
         .node {
@@ -212,10 +228,8 @@
             border-radius: 4px;
             font-family: monospace;
             font-size: 13px;
-        }
-
-        .node-input::placeholder {
-            color: rgba(0, 217, 255, 0.5);
+            min-height: 60px;
+            resize: vertical;
         }
 
         .node-input:focus {
@@ -239,11 +253,34 @@
             border-radius: 50%;
             cursor: crosshair;
             transition: all 0.2s ease;
+            box-shadow: 0 0 5px rgba(0, 217, 255, 0.5);
+            position: relative;
         }
 
         .handle:hover {
             background: #b700ff;
             transform: scale(1.5);
+            box-shadow: 0 0 15px rgba(183, 0, 255, 0.8);
+        }
+
+        .handle.input::before {
+            content: 'IN';
+            position: absolute;
+            top: -20px;
+            left: -10px;
+            font-size: 10px;
+            color: #00d9ff;
+            white-space: nowrap;
+        }
+
+        .handle.output::after {
+            content: 'OUT';
+            position: absolute;
+            top: -20px;
+            right: -15px;
+            font-size: 10px;
+            color: #00d9ff;
+            white-space: nowrap;
         }
 
         .properties-panel {
@@ -252,6 +289,7 @@
             border-radius: 8px;
             padding: 20px;
             overflow-y: auto;
+            max-height: 600px;
         }
 
         .properties-panel h3 {
@@ -334,7 +372,6 @@
             background: #ff5555;
         }
 
-        /* VIEWER SECTION */
         .viewer-container {
             display: grid;
             grid-template-columns: 1fr 300px;
@@ -356,9 +393,6 @@
             color: white;
             padding: 15px 20px;
             font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
 
         .chat-messages {
@@ -507,13 +541,23 @@
             border-bottom: none;
         }
 
-        .stat-label {
-            font-size: 13px;
-        }
-
         .stat-value {
             font-weight: bold;
             color: #b700ff;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #00d9ff;
+        }
+
+        .empty-state h2 {
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: rgba(0, 217, 255, 0.7);
         }
 
         @media (max-width: 1024px) {
@@ -533,27 +577,13 @@
                 height: 400px;
             }
         }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #00d9ff;
-        }
-
-        .empty-state h2 {
-            margin-bottom: 10px;
-        }
-
-        .empty-state p {
-            color: rgba(0, 217, 255, 0.7);
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🐍 Mandrake - Sistema de Automação de Conversas</h1>
-            <p>Crie fluxos de conversas interativas com editor visual</p>
+            <h1>🐍 Mandrake v2 - Sistema de Automação de Conversas</h1>
+            <p>Crie fluxos de conversas com conexão entre nós</p>
         </header>
 
         <div class="tabs">
@@ -589,13 +619,10 @@
                 </div>
 
                 <!-- Canvas -->
-                <div class="canvas" id="canvas" ondrop="dropNode(event)" ondragover="allowDrop(event)">
-                    <div class="canvas-grid" id="nodes-container">
-                        <div class="empty-state">
-                            <h2>Arraste nós aqui para começar</h2>
-                            <p>Selecione um tipo de nó à esquerda e arraste para o canvas</p>
-                        </div>
-                    </div>
+                <div class="canvas-wrapper">
+                    <div class="canvas-grid"></div>
+                    <svg id="canvas" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0;"></svg>
+                    <div class="nodes-container" id="nodes-container"></div>
                 </div>
 
                 <!-- Properties Panel -->
@@ -605,7 +632,7 @@
                         Selecione um nó para editar
                     </div>
                     <div class="button-group" style="margin-top: 30px;">
-                        <button class="btn btn-primary" onclick="saveFlow()">💾 Salvar Fluxo</button>
+                        <button class="btn btn-primary" onclick="saveFlow()">💾 Salvar</button>
                         <button class="btn btn-secondary" onclick="loadFlow()">📂 Carregar</button>
                         <button class="btn btn-danger" onclick="clearCanvas()">🗑️ Limpar</button>
                     </div>
@@ -618,12 +645,11 @@
             <div class="viewer-container">
                 <div class="chat-window">
                     <div class="chat-header">
-                        <span id="chat-title">Mandrake Chat</span>
-                        <span id="chat-status">●</span>
+                        <span>Mandrake Chat</span>
                     </div>
                     <div class="chat-messages" id="chat-messages">
                         <div class="message bot">
-                            <div class="message-bubble">Olá! Bem-vindo ao Mandrake. Comece criando um fluxo no editor.</div>
+                            <div class="message-bubble">Olá! Bem-vindo ao Mandrake v2.</div>
                         </div>
                     </div>
                     <div class="chat-input-area">
@@ -644,16 +670,16 @@
                     <div class="stats">
                         <h3>Estatísticas</h3>
                         <div class="stat-item">
-                            <span class="stat-label">Total de Nós</span>
+                            <span>Total de Nós</span>
                             <span class="stat-value" id="stat-nodes">0</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-label">Mensagens Enviadas</span>
-                            <span class="stat-value" id="stat-messages">0</span>
+                            <span>Conexões</span>
+                            <span class="stat-value" id="stat-edges">0</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-label">Conversas Ativas</span>
-                            <span class="stat-value" id="stat-conversations">1</span>
+                            <span>Mensagens</span>
+                            <span class="stat-value" id="stat-messages">0</span>
                         </div>
                     </div>
                 </div>
@@ -663,79 +689,42 @@
         <!-- EXPORT TAB -->
         <div id="export" class="tab-content">
             <div style="background: rgba(26, 31, 58, 0.8); border: 2px solid #b700ff; border-radius: 8px; padding: 30px;">
-                <h2 style="color: #00d9ff; margin-bottom: 20px;">Exportar e Importar Fluxos</h2>
-
+                <h2 style="color: #00d9ff; margin-bottom: 20px;">Exportar e Importar</h2>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div>
                         <h3 style="color: #b700ff; margin-bottom: 15px;">📤 Exportar</h3>
-                        <p style="margin-bottom: 15px; color: #00d9ff;">Baixe seu fluxo como arquivo JSON:</p>
-                        <button class="btn btn-primary" onclick="exportFlow()">Exportar como JSON</button>
+                        <button class="btn btn-primary" onclick="exportFlow()">Exportar JSON</button>
                     </div>
-
                     <div>
                         <h3 style="color: #b700ff; margin-bottom: 15px;">📥 Importar</h3>
-                        <p style="margin-bottom: 15px; color: #00d9ff;">Carregue um arquivo JSON:</p>
                         <input type="file" id="import-file" accept=".json" style="margin-bottom: 10px;">
                         <button class="btn btn-primary" onclick="importFlow()">Importar JSON</button>
                     </div>
-                </div>
-
-                <div style="margin-top: 30px; padding: 20px; background: rgba(0, 217, 255, 0.1); border-left: 4px solid #00d9ff; border-radius: 4px;">
-                    <h3 style="color: #00d9ff; margin-bottom: 10px;">📋 Formato do JSON</h3>
-                    <pre style="color: #b700ff; font-size: 12px; overflow-x: auto;"><code>{
-  "nodes": [
-    {
-      "id": "node-1",
-      "type": "message",
-      "x": 100,
-      "y": 100,
-      "content": "Olá!",
-      "metadata": {}
-    }
-  ],
-  "edges": [
-    {
-      "from": "node-1",
-      "to": "node-2"
-    }
-  ]
-}</code></pre>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Global state
         let nodes = [];
         let edges = [];
         let selectedNode = null;
-        let currentTheme = 'whatsapp';
         let messageCount = 0;
         let draggedNodeType = null;
+        let connectingFrom = null;
 
-        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             updateStats();
             loadFlowFromStorage();
         });
 
-        // Tab switching
         function switchTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            // Show selected tab
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
         }
 
-        // Drag and drop
         function startDrag(e, nodeType) {
             draggedNodeType = nodeType;
             e.dataTransfer.effectAllowed = 'copy';
@@ -750,7 +739,7 @@
             e.preventDefault();
             if (!draggedNodeType) return;
 
-            const canvas = document.getElementById('canvas');
+            const canvas = document.querySelector('.canvas-wrapper');
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -759,7 +748,6 @@
             draggedNodeType = null;
         }
 
-        // Node management
         function createNode(type, x, y) {
             const id = 'node-' + Date.now();
             const node = {
@@ -774,7 +762,7 @@
             nodes.push(node);
             renderNode(node);
             updateStats();
-            clearEmptyState();
+            drawEdges();
         }
 
         function getDefaultContent(type) {
@@ -789,7 +777,7 @@
             return defaults[type] || 'Novo nó';
         }
 
-        function renderNode(node ) {
+        function renderNode(node) {
             const container = document.getElementById('nodes-container');
             const nodeEl = document.createElement('div');
             nodeEl.className = 'node';
@@ -812,16 +800,16 @@
                     <button class="node-delete" onclick="deleteNode('${node.id}')">✕</button>
                 </div>
                 <div class="node-content">
-                    <textarea class="node-input" placeholder="Conteúdo..." onchange="updateNodeContent('${node.id}', this.value)" onclick="selectNode('${node.id}')">${node.content}</textarea>
+                    <textarea class="node-input" placeholder="Conteúdo..." onchange="updateNodeContent('${node.id}', this.value)">${node.content}</textarea>
                 </div>
                 <div class="node-handles">
-                    <div class="handle" title="Entrada"></div>
-                    <div class="handle" title="Saída"></div>
+                    <div class="handle input" data-node="${node.id}" data-type="input" onmousedown="startConnection(event, '${node.id}', 'input')" title="Entrada"></div>
+                    <div class="handle output" data-node="${node.id}" data-type="output" onmousedown="startConnection(event, '${node.id}', 'output')" title="Saída"></div>
                 </div>
             `;
 
             nodeEl.addEventListener('mousedown', (e) => {
-                if (e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') {
+                if (e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON' && !e.target.classList.contains('handle')) {
                     dragNode(e, node.id);
                 }
             });
@@ -852,6 +840,7 @@
             edges = edges.filter(e => e.from !== nodeId && e.to !== nodeId);
             document.getElementById(nodeId).remove();
             updateStats();
+            drawEdges();
             if (selectedNode === nodeId) {
                 selectedNode = null;
                 document.getElementById('properties').innerHTML = 'Selecione um nó para editar';
@@ -872,6 +861,7 @@
                 node.y = Math.max(0, startNodeY + deltaY);
                 document.getElementById(nodeId).style.left = node.x + 'px';
                 document.getElementById(nodeId).style.top = node.y + 'px';
+                drawEdges();
             }
 
             function onMouseUp() {
@@ -883,11 +873,123 @@
             document.addEventListener('mouseup', onMouseUp);
         }
 
+        function startConnection(e, nodeId, handleType) {
+            e.stopPropagation();
+            connectingFrom = { nodeId, handleType };
+            
+            const canvas = document.getElementById('canvas');
+            const node = nodes.find(n => n.id === nodeId);
+            const nodeEl = document.getElementById(nodeId);
+            const rect = nodeEl.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            const startX = rect.left - canvasRect.left + (handleType === 'input' ? 0 : rect.width);
+            const startY = rect.top - canvasRect.top + rect.height - 10;
+
+            function onMouseMove(moveEvent) {
+                const endX = moveEvent.clientX - canvasRect.left;
+                const endY = moveEvent.clientY - canvasRect.top;
+
+                canvas.innerHTML = '';
+                
+                // Draw existing edges
+                edges.forEach(edge => {
+                    const fromNode = nodes.find(n => n.id === edge.from);
+                    const toNode = nodes.find(n => n.id === edge.to);
+                    if (fromNode && toNode) {
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', fromNode.x + 200);
+                        line.setAttribute('y1', fromNode.y + 60);
+                        line.setAttribute('x2', toNode.x);
+                        line.setAttribute('y2', toNode.y + 60);
+                        line.setAttribute('stroke', '#00d9ff');
+                        line.setAttribute('stroke-width', '2');
+                        canvas.appendChild(line);
+                    }
+                });
+
+                // Draw connecting line
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', startX);
+                line.setAttribute('y1', startY);
+                line.setAttribute('x2', endX);
+                line.setAttribute('y2', endY);
+                line.setAttribute('stroke', '#b700ff');
+                line.setAttribute('stroke-width', '2');
+                line.setAttribute('stroke-dasharray', '5,5');
+                canvas.appendChild(line);
+            }
+
+            function onMouseUp(upEvent) {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+
+                const target = upEvent.target;
+                if (target.classList.contains('handle')) {
+                    const targetNodeId = target.getAttribute('data-node');
+                    const targetType = target.getAttribute('data-type');
+                    
+                    if (handleType === 'output' && targetType === 'input' && targetNodeId !== nodeId) {
+                        const edgeExists = edges.some(e => e.from === nodeId && e.to === targetNodeId);
+                        if (!edgeExists) {
+                            edges.push({ from: nodeId, to: targetNodeId });
+                        }
+                    }
+                }
+
+                connectingFrom = null;
+                drawEdges();
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        }
+
+        function drawEdges() {
+            const canvas = document.getElementById('canvas');
+            canvas.innerHTML = '';
+
+            edges.forEach(edge => {
+                const fromNode = nodes.find(n => n.id === edge.from);
+                const toNode = nodes.find(n => n.id === edge.to);
+                
+                if (fromNode && toNode) {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', fromNode.x + 200);
+                    line.setAttribute('y1', fromNode.y + 60);
+                    line.setAttribute('x2', toNode.x);
+                    line.setAttribute('y2', toNode.y + 60);
+                    line.setAttribute('stroke', '#00d9ff');
+                    line.setAttribute('stroke-width', '2');
+                    line.setAttribute('marker-end', 'url(#arrowhead)');
+                    canvas.appendChild(line);
+
+                    // Add arrow marker
+                    if (!document.getElementById('arrowhead')) {
+                        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+                        marker.setAttribute('id', 'arrowhead');
+                        marker.setAttribute('markerWidth', '10');
+                        marker.setAttribute('markerHeight', '10');
+                        marker.setAttribute('refX', '9');
+                        marker.setAttribute('refY', '3');
+                        marker.setAttribute('orient', 'auto');
+                        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                        polygon.setAttribute('points', '0 0, 10 3, 0 6');
+                        polygon.setAttribute('fill', '#00d9ff');
+                        marker.appendChild(polygon);
+                        defs.appendChild(marker);
+                        canvas.appendChild(defs);
+                    }
+                }
+            });
+        }
+
         function updatePropertiesPanel(node) {
             const panel = document.getElementById('properties');
             panel.innerHTML = `
                 <div class="property-group">
-                    <label class="property-label">ID do Nó</label>
+                    <label class="property-label">ID</label>
                     <input type="text" class="property-input" value="${node.id}" readonly>
                 </div>
                 <div class="property-group">
@@ -899,25 +1001,19 @@
                     <textarea class="property-input" style="min-height: 100px;" onchange="updateNodeContent('${node.id}', this.value)">${node.content}</textarea>
                 </div>
                 <div class="property-group">
-                    <label class="property-label">Posição X</label>
-                    <input type="number" class="property-input" value="${node.x}" onchange="node.x = parseInt(this.value); document.getElementById('${node.id}').style.left = this.value + 'px';">
-                </div>
-                <div class="property-group">
-                    <label class="property-label">Posição Y</label>
-                    <input type="number" class="property-input" value="${node.y}" onchange="node.y = parseInt(this.value); document.getElementById('${node.id}').style.top = this.value + 'px';">
+                    <label class="property-label">Conexões</label>
+                    <div style="color: #00d9ff; font-size: 12px;">
+                        Entrada: ${edges.filter(e => e.to === node.id).length}<br>
+                        Saída: ${edges.filter(e => e.from === node.id).length}
+                    </div>
                 </div>
             `;
         }
 
-        // Storage
         function saveFlow() {
-            const flowData = {
-                nodes,
-                edges,
-                timestamp: new Date().toISOString()
-            };
+            const flowData = { nodes, edges, timestamp: new Date().toISOString() };
             localStorage.setItem('mandrake-flow', JSON.stringify(flowData));
-            alert('✅ Fluxo salvo com sucesso!');
+            alert('✅ Fluxo salvo!');
         }
 
         function loadFlow() {
@@ -929,7 +1025,7 @@
                 renderCanvas();
                 alert('✅ Fluxo carregado!');
             } else {
-                alert('❌ Nenhum fluxo salvo encontrado');
+                alert('❌ Nenhum fluxo salvo');
             }
         }
 
@@ -946,20 +1042,12 @@
         function renderCanvas() {
             const container = document.getElementById('nodes-container');
             container.innerHTML = '';
-            if (nodes.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <h2>Arraste nós aqui para começar</h2>
-                        <p>Selecione um tipo de nó à esquerda e arraste para o canvas</p>
-                    </div>
-                `;
-            } else {
-                nodes.forEach(node => renderNode(node));
-            }
+            nodes.forEach(node => renderNode(node));
+            drawEdges();
         }
 
         function clearCanvas() {
-            if (confirm('Tem certeza? Isso vai limpar todos os nós.')) {
+            if (confirm('Limpar todos os nós?')) {
                 nodes = [];
                 edges = [];
                 selectedNode = null;
@@ -968,19 +1056,8 @@
             }
         }
 
-        function clearEmptyState() {
-            const empty = document.querySelector('.empty-state');
-            if (empty) empty.remove();
-        }
-
-        // Export/Import
         function exportFlow() {
-            const flowData = {
-                nodes,
-                edges,
-                timestamp: new Date().toISOString(),
-                version: '1.0'
-            };
+            const flowData = { nodes, edges, timestamp: new Date().toISOString(), version: '2.0' };
             const dataStr = JSON.stringify(flowData, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(dataBlob);
@@ -995,7 +1072,7 @@
             const fileInput = document.getElementById('import-file');
             const file = fileInput.files[0];
             if (!file) {
-                alert('Selecione um arquivo JSON');
+                alert('Selecione um arquivo');
                 return;
             }
 
@@ -1007,15 +1084,14 @@
                     edges = flowData.edges || [];
                     renderCanvas();
                     updateStats();
-                    alert('✅ Fluxo importado com sucesso!');
+                    alert('✅ Fluxo importado!');
                 } catch (err) {
-                    alert('❌ Erro ao importar: ' + err.message);
+                    alert('❌ Erro: ' + err.message);
                 }
             };
             reader.readAsText(file);
         }
 
-        // Chat viewer
         function sendMessage() {
             const input = document.getElementById('chat-input');
             const message = input.value.trim();
@@ -1026,24 +1102,14 @@
             messageCount++;
             updateStats();
 
-            // Simulate bot response
             setTimeout(() => {
-                const responses = [
-                    'Entendi! 👍',
-                    'Ótimo! Próximo passo?',
-                    'Perfeito! 🎉',
-                    'Claro! Como posso ajudar?',
-                    'Entendido!'
-                ];
-                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                addChatMessage(randomResponse, 'bot');
+                const responses = ['Entendi! 👍', 'Ótimo!', 'Perfeito! 🎉', 'Claro!', 'Entendido!'];
+                addChatMessage(responses[Math.floor(Math.random() * responses.length)], 'bot');
             }, 500);
         }
 
         function handleChatInput(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
+            if (e.key === 'Enter') sendMessage();
         }
 
         function addChatMessage(text, sender) {
@@ -1056,7 +1122,6 @@
         }
 
         function setTheme(theme) {
-            currentTheme = theme;
             document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
             event.target.classList.add('active');
 
@@ -1076,8 +1141,13 @@
 
         function updateStats() {
             document.getElementById('stat-nodes').textContent = nodes.length;
+            document.getElementById('stat-edges').textContent = edges.length;
             document.getElementById('stat-messages').textContent = messageCount;
         }
+
+        // Allow drop on canvas
+        document.querySelector('.canvas-wrapper').addEventListener('dragover', allowDrop);
+        document.querySelector('.canvas-wrapper').addEventListener('drop', dropNode);
     </script>
 </body>
 </html>
